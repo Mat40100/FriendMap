@@ -312,6 +312,7 @@ function FM:OnAddonMessage(text, distribution, sender)
         if isNew then
             -- greet newcomers so they see us right away
             self:BroadcastPosition(true)
+            if self.OnNewMember then self:OnNewMember(code, short) end
             self:RefreshUI()
         end
         if self.Pins then self.Pins:Refresh() end

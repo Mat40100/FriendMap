@@ -253,7 +253,7 @@ local function Build()
 
     local foot = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     foot:SetPoint("BOTTOM", 0, 16)
-    foot:SetText("Kills of your FriendMap groups - resets every Monday")
+    foot:SetText("Synced across your FriendMap groups - resets every Monday")
 end
 
 ----------------------------------------------------------------------

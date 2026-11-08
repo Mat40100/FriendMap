@@ -15,7 +15,7 @@ Un addon World of Warcraft (client WoW Forever) qui affiche vos amis sur la cart
 - **Traces** : de petits points montrent le trajet de chaque ami sur les 3 dernières minutes.
 - **Distance et flèche** : les infobulles indiquent « 340 yd NE » (en mètres environ ×0,9) ; cliquez sur un ami sur la carte pour afficher une flèche qui pointe vers lui.
 - **Statut** : un court statut (« farm », « cherche groupe »…) affiché sous votre nom sur la carte.
-- **Fil des victimes et classement** : votre groupe voit vos victimes en JcJ sauvage ; classement hebdomadaire dans la fenêtre et avec `/fm top`.
+- **Fil des victimes et classement** : votre groupe voit vos victimes en JcJ sauvage ; classement hebdomadaire dans la fenêtre et avec `/fm top`. Les victimes sont synchronisées entre tous les membres du groupe, même celles faites pendant que vous ou le tueur étiez hors ligne (tout ami qui les a vues les transmet).
 - **Niveaux et hauts faits** : annoncés au groupe, avec un halo doré sur l'icône.
 - **Point de ralliement** : Alt+Maj+clic sur la carte (ou **Rally here**) pour poser un drapeau vers lequel tout le monde reçoit une flèche.
 - **Carte de chaleur** : sur la carte du continent, chaque zone affiche combien d'amis s'y trouvent.

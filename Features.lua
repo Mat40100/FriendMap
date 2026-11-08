@@ -395,7 +395,7 @@ FM.SlashExtra.status = function(rest) FM:SetStatus(rest) end
 ----------------------------------------------------------------------
 local engaged, credited = {}, {}
 
-local function WeekKey() return date("%Y-%W") end
+local function WeekKey(t) return date("%Y-%W", t) end
 
 local function ClassOf(name)
     if name == UnitName("player") then return select(2, UnitClass("player")) end
@@ -406,30 +406,69 @@ local function ClassOf(name)
     end
 end
 
-local function AddKill(killer, victim, zone)
+-- Kills are stored as unique events (killer + time + victim), so merging the
+-- sets other players send never counts a kill twice. Everyone ends up with the
+-- same weekly leaderboard, even for kills made while they were offline.
+local MAX_EVENTS = 600
+
+local function Store()
+    FriendMapDB.kills = FriendMapDB.kills or {}
     local k = FriendMapDB.kills
     if k.week ~= WeekKey() then
-        k.week, k.counts, k.classes, k.log = WeekKey(), {}, {}, {}
+        k.week, k.events, k.classes = WeekKey(), {}, k.classes or {}
     end
-    k.counts = k.counts or {}
+    k.events = k.events or {}
     k.classes = k.classes or {}
-    k.log = k.log or {}
-    k.counts[killer] = (k.counts[killer] or 0) + 1
+    -- older versions kept counts + a short log: keep what the log has
+    if k.log then
+        for _, e in ipairs(k.log) do
+            if e.killer and e.at and WeekKey(e.at) == k.week then
+                k.events[e.killer .. "@" .. e.at .. "@" .. (e.victim or "?")] =
+                    { killer = e.killer, victim = e.victim or "?", zone = e.zone or "?", at = e.at }
+            end
+        end
+        k.log, k.counts = nil, nil
+    end
+    return k
+end
+
+local function SafeField(s) return (tostring(s or "?"):gsub("[|~;]", "")) end
+
+-- add one kill; returns true if it was new
+local function AddEvent(killer, victim, zone, at, class)
+    at = tonumber(at)
+    if not killer or not at or WeekKey(at) ~= WeekKey() then return false end
+    local k = Store()
+    killer, victim, zone = SafeField(killer), SafeField(victim), SafeField(zone)
+    local id = killer .. "@" .. at .. "@" .. victim
+    if class and class ~= "" and class ~= "?" then k.classes[killer] = class end
+    if k.events[id] then return false end
+    k.events[id] = { killer = killer, victim = victim, zone = zone, at = at }
     k.classes[killer] = ClassOf(killer) or k.classes[killer]
-    table.insert(k.log, 1, { killer = killer, victim = victim, zone = zone, at = time() })
-    while #k.log > 30 do table.remove(k.log) end
+    -- keep the store bounded (drop the oldest)
+    local n, oldestId, oldestAt = 0, nil, math.huge
+    for eid, e in pairs(k.events) do
+        n = n + 1
+        if e.at < oldestAt then oldestId, oldestAt = eid, e.at end
+    end
+    if n > MAX_EVENTS and oldestId then k.events[oldestId] = nil end
+    return true
+end
+
+local function Changed()
     if FM.RefreshLeaderboard then FM:RefreshLeaderboard() end
+    FM:RefreshUI()
 end
 
 function FM:KillLog()
-    local k = FriendMapDB.kills
-    if k.week ~= WeekKey() then return {} end
-    return k.log or {}
+    local t = {}
+    for _, e in pairs(Store().events) do t[#t + 1] = e end
+    table.sort(t, function(a, b) return a.at > b.at end)
+    return t
 end
 
 function FM:KillerClass(name)
-    local k = FriendMapDB.kills
-    return ClassOf(name) or (k.classes and k.classes[name])
+    return ClassOf(name) or Store().classes[name]
 end
 
 function FM:WeekLabel()
@@ -437,14 +476,116 @@ function FM:WeekLabel()
 end
 
 function FM:Leaderboard(limit)
-    local k = FriendMapDB.kills
-    if k.week ~= WeekKey() or not k.counts then return {} end
+    local counts = {}
+    for _, e in pairs(Store().events) do counts[e.killer] = (counts[e.killer] or 0) + 1 end
     local t = {}
-    for name, n in pairs(k.counts) do t[#t + 1] = { name = name, n = n } end
-    table.sort(t, function(a, b) return a.n > b.n end)
+    for name, n in pairs(counts) do t[#t + 1] = { name = name, n = n } end
+    table.sort(t, function(a, b) if a.n ~= b.n then return a.n > b.n end return a.name < b.name end)
     while limit and #t > limit do table.remove(t) end
     return t
 end
+
+----------------------------------------------------------------------
+-- Kill sync between group members
+--   KHI|count|digest        "here is what I have" (on connect / when someone appears)
+--   KS|e1;e2;...            kill events, e = killer~victim~zone~time~class
+-- When digests differ, both sides send their events; merging is idempotent.
+----------------------------------------------------------------------
+local function Digest()
+    local n, sum = 0, 0
+    for _, e in pairs(Store().events) do
+        n = n + 1
+        sum = (sum + e.at % 1000003 + #e.killer * 7 + #e.victim) % 2147483647
+    end
+    return n, sum
+end
+
+local sendQueue, sending = {}, false
+local function PumpQueue()
+    local job = table.remove(sendQueue, 1)
+    if not job then sending = false return end
+    FM:SendToGroup(job.g, job.msg)
+    C_Timer.After(0.3, PumpQueue)
+end
+local function Queue(g, msg)
+    table.insert(sendQueue, { g = g, msg = msg })
+    if not sending then sending = true; C_Timer.After(0.1, PumpQueue) end
+end
+
+local function SendHello(g)
+    local n, sum = Digest()
+    Queue(g, ("KHI|%d|%d"):format(n, sum))
+end
+
+local lastFull = {} -- [code] = GetTime() of our last full send to that group
+local function SendAll(g)
+    if lastFull[g.code] and GetTime() - lastFull[g.code] < 20 then return end
+    lastFull[g.code] = GetTime()
+    local k = Store()
+    local buf, len = {}, 0
+    for _, e in pairs(k.events) do
+        local s = ("%s~%s~%s~%d~%s"):format(e.killer, e.victim, e.zone, e.at, k.classes[e.killer] or "")
+        if len + #s + 1 > 200 and #buf > 0 then
+            Queue(g, "KS|" .. table.concat(buf, ";"))
+            buf, len = {}, 0
+        end
+        buf[#buf + 1] = s
+        len = len + #s + 1
+    end
+    if #buf > 0 then Queue(g, "KS|" .. table.concat(buf, ";")) end
+end
+
+local helloSent, helloPending = {}, {}
+local function ScheduleHello(g, delay)
+    if helloPending[g.code] then return end
+    helloPending[g.code] = true
+    C_Timer.After(delay or 3, function()
+        helloPending[g.code] = nil
+        if FM:GetGroup(g.code) and FM:IsConnected(g) then SendHello(g) end
+    end)
+end
+
+-- someone new appeared in a group: compare kill sets
+function FM:OnNewMember(code)
+    local g = self:GetGroup(code)
+    if g then ScheduleHello(g, 2 + math.random() * 3) end
+end
+
+local lastReply = {}
+FM.Handlers.KHI = function(self, p, code, sender)
+    local g = self:GetGroup(code)
+    if not g then return end
+    local theirN, theirSum = tonumber(p[2]) or 0, tonumber(p[3]) or 0
+    local n, sum = Digest()
+    if theirN == n and theirSum == sum then return end
+    -- different: give them ours (if we have something), and ask for theirs
+    if n > 0 then
+        C_Timer.After(0.5 + math.random() * 2.5, function() SendAll(g) end)
+    end
+    if theirN > 0 and (not lastReply[sender] or GetTime() - lastReply[sender] > 30) then
+        lastReply[sender] = GetTime()
+        ScheduleHello(g, 1)
+    end
+end
+
+FM.Handlers.KS = function(self, p, code)
+    local added = 0
+    for entry in tostring(p[2] or ""):gmatch("[^;]+") do
+        local killer, victim, zone, at, class = strsplit("~", entry)
+        if AddEvent(killer, victim, zone, at, class) then added = added + 1 end
+    end
+    if added > 0 then Changed() end
+end
+
+C_Timer.NewTicker(5, function()
+    if not FM.worldReady or not FriendMapDB or not FriendMapDB.kills then return end
+    for _, g in ipairs(FriendMapDB.groups) do
+        if not helloSent[g.code] and FM:IsConnected(g) then
+            helloSent[g.code] = true
+            ScheduleHello(g, 2 + math.random() * 4)
+        end
+    end
+end)
 
 local function ScanUnits(fn)
     for _, u in ipairs({ "target", "focus", "mouseover" }) do fn(u) end
@@ -464,9 +605,11 @@ local function CheckKills()
             credited[guid] = now
             local victim = Clean(UnitName(u))
             local me = UnitName("player")
-            AddKill(me, victim, ZoneName())
-            FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s)"):format(victim, ZoneName()))
-            Broadcast(("KILL|%s|%s"):format(victim, Clean(ZoneName())))
+            local at, zone = time(), SafeField(ZoneName())
+            AddEvent(me, victim, zone, at, select(2, UnitClass("player")))
+            Changed()
+            FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s)"):format(victim, zone))
+            Broadcast(("KILL|%s|%s|%d"):format(SafeField(victim), zone, at))
         end
     end)
     for guid, t in pairs(engaged) do if now - t > 60 then engaged[guid] = nil end end
@@ -474,10 +617,13 @@ local function CheckKills()
 end
 
 FM.Handlers.KILL = function(self, p, code, sender, short)
-    AddKill(short, p[2], p[3])
-    local g = self:GetGroup(code)
+    -- KILL|victim|zone|time  (older versions send no time)
+    local at = (p[4] and p[4] ~= code) and tonumber(p[4]) or time()
+    local class
+    for _, m in pairs(self.members[code] or {}) do if m.name == short then class = m.class end end
+    if not AddEvent(short, p[2], p[3], at, class) then return end -- already known (e.g. via another group)
+    Changed()
     self:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800%s killed %s|r (%s)"):format(short, p[2] or "?", p[3] or "?"))
-    self:RefreshUI()
 end
 
 FM.SlashExtra.top = function() FM:ToggleLeaderboard() end

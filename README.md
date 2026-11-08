@@ -15,7 +15,7 @@ A World of Warcraft addon (WoW Forever client) that shows your friends on the wo
 - **Trails**: faint dots show where each friend went in the last 3 minutes.
 - **Distance & arrow**: tooltips show "340 yd NE"; click a friend on the map to get an on-screen arrow pointing to them.
 - **Status**: a short status ("farming", "LFG"...) shown under your name on the map.
-- **Kill feed & leaderboard**: your group sees your world PvP kills; weekly ranking in the window and `/fm top`.
+- **Kill feed & leaderboard**: your group sees your world PvP kills; weekly ranking in the window and `/fm top`. Kills are synced between all group members, even those made while you or the killer were offline (any friend who saw them passes them on).
 - **Level-up & achievement news**: announced to the group, with a golden glow on the icon.
 - **Rally point**: Alt+Shift+click the map (or **Rally here**) to place a flag everyone gets an arrow to.
 - **Zone heatmap**: on the continent map, each zone shows how many friends are in it.
