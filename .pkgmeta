@@ -5,3 +5,7 @@ ignore:
   - .pkgmeta
   - .github
   - Media/FriendMap-512.png
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
