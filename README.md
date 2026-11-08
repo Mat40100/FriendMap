@@ -45,6 +45,10 @@ Whenever a map is open — Blizzard's world map, **MelloUI's map**, or another m
 
 On Blizzard's map you can also Alt+click (ping) and Alt+Shift+click (rally) directly.
 
+## Updates
+
+FriendMap tells you when a newer version exists: as soon as anyone in your groups runs a newer version, you get a chat message (and the window title shows it). Type `/fm update` to copy the download link, then reinstall as above. `/fm version` shows your version.
+
 ## Getting started
 
 1. Type `/fm` to open the window.

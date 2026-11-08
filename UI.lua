@@ -103,7 +103,8 @@ local function Build()
 
     local title = frame.TitleText or frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     if not frame.TitleText then title:SetPoint("TOP", 0, -5) end
-    title:SetText("FriendMap")
+    title:SetText("FriendMap " .. (FM.VERSION or ""))
+    frame.title = title
 
     local create = Button(frame, "Create group", 110)
     create:SetPoint("TOPLEFT", 14, -32)
@@ -232,6 +233,8 @@ function FM:RefreshUI()
     if not frame or not frame:IsShown() then return end
     frame.share:SetChecked(FriendMapDB.sharing)
     frame.pvp:SetChecked(FriendMapDB.pvpAnnounce)
+    local newer = FriendMapDB.newestVersion and FM.IsNewer and FM:IsNewer(FriendMapDB.newestVersion, FM.VERSION)
+    frame.title:SetText("FriendMap " .. (FM.VERSION or "") .. (newer and ("  |cff00ff00(" .. FriendMapDB.newestVersion .. " available: /fm update)|r") or ""))
     if not frame.status:HasFocus() then frame.status:SetText(FriendMapDB.status or "") end
     local top = FM.Leaderboard and FM:Leaderboard(5) or {}
     local parts = {}

@@ -45,6 +45,10 @@ Dès qu'une carte est ouverte — carte du monde de Blizzard, **carte de MelloUI
 
 Sur la carte de Blizzard, vous pouvez aussi faire Alt+clic (ping) et Alt+Maj+clic (ralliement) directement.
 
+## Mises à jour
+
+FriendMap vous prévient quand une nouvelle version existe : dès qu'un membre de vos groupes utilise une version plus récente, vous recevez un message dans le chat (et le titre de la fenêtre l'indique). Tapez `/fm update` pour copier le lien de téléchargement, puis réinstallez comme ci-dessus. `/fm version` affiche votre version.
+
 ## Premiers pas
 
 1. Tapez `/fm` pour ouvrir la fenêtre.
