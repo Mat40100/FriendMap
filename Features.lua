@@ -107,6 +107,7 @@ local KINDS = {
     help  = { r = 1,   g = 0.1,  b = 0.1, icon = "Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew", life = 60 },
     rally = { r = 0.2, g = 0.6,  b = 1,   icon = "Interface\\Icons\\Ability_Warrior_BattleShout", life = 1800 },
 }
+FM.MarkerKinds = KINDS
 
 function FM:ShowMarker(kind, inst, x, y, tip, label)
     local k = KINDS[kind]
@@ -625,6 +626,7 @@ local function CheckKills()
             Changed()
             FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s)"):format(victim, zone))
             Broadcast(("KILL|%s|%s|%d"):format(SafeField(victim), zone, at))
+            if FM.OnKill then FM:OnKill(me, victim) end
         end
     end)
     for guid, t in pairs(engaged) do if now - t > 60 then engaged[guid] = nil end end
@@ -639,6 +641,7 @@ FM.Handlers.KILL = function(self, p, code, sender, short)
     if not AddEvent(short, p[2], p[3], at, class) then return end -- already known (e.g. via another group)
     Changed()
     self:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800%s killed %s|r (%s)"):format(short, p[2] or "?", p[3] or "?"))
+    if self.OnKill then self:OnKill(short, p[2]) end
 end
 
 FM.SlashExtra.top = function() FM:ToggleLeaderboard() end

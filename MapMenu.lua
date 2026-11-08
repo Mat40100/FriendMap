@@ -105,6 +105,7 @@ local function Items()
         { text = "Trails: " .. OnOff(FriendMapDB.trails), keepOpen = true, func = function() FM.SlashExtra.trails() end },
         { text = "Zone heatmap: " .. OnOff(FriendMapDB.heatmap), keepOpen = true, func = function() FM.SlashExtra.heatmap() end },
         { text = "Minimap icons: " .. OnOff(FriendMapDB.minimap), keepOpen = true, func = function() FM:Slash("minimap") end },
+        { text = "Enemy sightings: " .. OnOff(FriendMapDB.spots ~= false), keepOpen = true, func = function() FM.SlashExtra.spots() end },
         { text = "Friends as: " .. (FM.UseCircleIcons and FM.UseCircleIcons() and "circles" or "class icons"), keepOpen = true, func = function() FM.SlashExtra.icons() end },
         { text = "Stop arrow", disabled = not FM.trackName, func = function() FM:Track(nil) end },
         { separator = true },

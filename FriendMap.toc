@@ -15,6 +15,7 @@ Core.lua
 Transport.lua
 Pins.lua
 Features.lua
+Hunt.lua
 MapMenu.lua
 QuickBar.lua
 Leaderboard.lua

@@ -90,6 +90,8 @@ Choisissez les icônes affichées avec le bouton **Quick bar** dans `/fm`, avec 
 | `/fm rally` / `/fm rally clear` | Poser / retirer le point de ralliement à votre position |
 | `/fm rally off` / `/fm rally on` | Masquer / afficher la flèche vers le point de ralliement |
 | `/fm icons` | Basculer les amis entre cercles de couleur de classe et icônes de classe |
+| `/fm spots` | Activer / désactiver le signalement d'ennemis |
+| `/fm revenge` / `/fm revenge clear` | Afficher / vider la liste de vengeance |
 | `/fm top` | Ouvrir le classement hebdomadaire JcJ sauvage |
 | `/fm members` | Afficher tous les joueurs vus dans chacun de vos groupes (en ligne / vu il y a) |
 | `/fm trails` / `/fm heatmap` | Activer/désactiver les traces / la carte de chaleur |
