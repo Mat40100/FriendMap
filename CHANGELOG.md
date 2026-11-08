@@ -1,5 +1,9 @@
 # FriendMap changelog
 
+## 1.6.3
+- **Assists:** the PvP leaderboard now counts assists. A kill (the enemy was your target when it died) is worth **2 points**, an assist (you fought it, or it was fighting one of your friends, in the last 30 s) is worth **1 point**. The leaderboard ranks by points and shows kills and assists for everyone.
+- **More kills detected:** deaths are checked the moment an enemy's health changes, so kills are no longer missed when the enemy's nameplate disappears right after it dies. Enemies fighting your friends now count too.
+
 ## 1.6.2
 - **Revenge:** when an enemy kills you in world PvP, your groups are told and the killer goes on the revenge list for 2 hours. When anyone in the group sees them again, everyone gets a purple **REVENGE** alert and a marker on the map for 2 minutes. Killing them settles it. `/fm revenge` shows the list.
 - Friends now show as a **light circle in their class colour** on every map (Blizzard, MelloUI, OpenMap) and on the minimap. Prefer the class icons? `/fm icons` or the map menu switches back.

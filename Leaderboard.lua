@@ -97,7 +97,7 @@ local function Card(parent, rank, height)
     c.count:SetTextColor(m[1], m[2], m[3])
     c.label = c:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     c.label:SetPoint("TOP", c.count, "BOTTOM", 0, -1)
-    c.label:SetText("kills")
+    c.label:SetText("points")
     return c
 end
 
@@ -118,6 +118,7 @@ local function FillCard(c, e)
     c.name:SetText(e.name)
     c.name:SetTextColor(ClassColor(class))
     c.count:SetText(e.n)
+    c.label:SetText(("points  ·  %d K  %d A"):format(e.k or e.n, e.a or 0))
 end
 
 ----------------------------------------------------------------------
@@ -232,7 +233,7 @@ local function Build()
     -- latest kills
     local feedTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     feedTitle:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 2, -10)
-    feedTitle:SetText("Latest kills")
+    feedTitle:SetText("Latest kills  |cff888888(kill = 2 points, assist = 1)|r")
     local feed = Panel(frame)
     feed:SetPoint("TOPLEFT", feedTitle, "BOTTOMLEFT", -2, -4)
     feed:SetPoint("RIGHT", list, "RIGHT")
@@ -263,15 +264,18 @@ function FM:RefreshLeaderboard()
     if not frame or not frame:IsShown() then return end
     local all = self:Leaderboard()
     local total = 0
-    for _, e in ipairs(all) do total = total + e.n end
-    frame.sub:SetText(("This week  ·  %d kill%s  ·  %d hunter%s"):format(total, total == 1 and "" or "s", #all, #all == 1 and "" or "s"))
+    local assists = 0
+    for _, e in ipairs(all) do total = total + (e.k or 0); assists = assists + (e.a or 0) end
+    frame.sub:SetText(("This week  ·  %d kill%s  ·  %d assist%s  ·  %d hunter%s"):format(total, total == 1 and "" or "s",
+        assists, assists == 1 and "" or "s", #all, #all == 1 and "" or "s"))
 
     for i = 1, 3 do FillCard(frame.cards[i], all[i]) end
 
-    local me, myRank, myN = UnitName("player"), nil, 0
-    for i, e in ipairs(all) do if e.name == me then myRank, myN = i, e.n end end
+    local me, myRank, mine = UnitName("player"), nil, nil
+    for i, e in ipairs(all) do if e.name == me then myRank, mine = i, e end end
     if myRank then
-        frame.me:SetText(("You are |cffffd100#%d|r with |cffffd100%d|r kill%s"):format(myRank, myN, myN == 1 and "" or "s"))
+        frame.me:SetText(("You are |cffffd100#%d|r with |cffffd100%d|r points (%d kill%s, %d assist%s)"):format(myRank, mine.n,
+            mine.k, mine.k == 1 and "" or "s", mine.a, mine.a == 1 and "" or "s"))
     else
         frame.me:SetText("|cff888888You have no kills this week yet|r")
     end
@@ -290,7 +294,7 @@ function FM:RefreshLeaderboard()
             local cr, cg, cb = ClassColor(class)
             r.bar:SetVertexColor(cr, cg, cb, 0.9)
             r.bar:SetWidth(math.max(2, barW * e.n / max))
-            r.count:SetText(e.n)
+            r.count:SetText(("%d |cff888888(%dK %dA)|r"):format(e.n, e.k, e.a))
             r.hl:SetShown(e.name == me)
             r:Show()
         else
@@ -305,8 +309,9 @@ function FM:RefreshLeaderboard()
         local k = log[i]
         if k then
             local kr, kg, kb = ClassColor(self:KillerClass(k.killer))
-            l:SetText(("%s |cff%02x%02x%02x%s|r  >  |cffff6666%s|r  |cff888888%s · %s|r"):format(
-                SKULL, kr * 255, kg * 255, kb * 255, k.killer, k.victim or "?", k.zone or "?", Ago(k.at)))
+            l:SetText(("%s |cff%02x%02x%02x%s|r  %s  |cffff6666%s|r  |cff888888%s · %s|r"):format(
+                SKULL, kr * 255, kg * 255, kb * 255, k.killer, k.kind == "A" and "|cffffbb66assist|r" or ">",
+                k.victim or "?", k.zone or "?", Ago(k.at)))
         else
             l:SetText(i == 1 and "|cff666666Nothing yet.|r" or "")
         end

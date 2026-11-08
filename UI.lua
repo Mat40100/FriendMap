@@ -271,7 +271,7 @@ function FM:RefreshUI()
     local top = FM.Leaderboard and FM:Leaderboard(5) or {}
     local parts = {}
     for i, e in ipairs(top) do parts[i] = ("%s %d"):format(e.name, e.n) end
-    frame.top:SetText("|cffff8800PvP kills this week:|r " .. (#parts > 0 and table.concat(parts, ", ") or "none yet"))
+    frame.top:SetText("|cffff8800PvP points this week:|r " .. (#parts > 0 and table.concat(parts, ", ") or "none yet"))
     local groups = FriendMapDB.groups
     frame.empty:SetShown(#groups == 0)
     for i, r in ipairs(frame.rows) do

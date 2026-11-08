@@ -451,15 +451,23 @@ end
 local function SafeField(s) return (tostring(s or "?"):gsub("[|~;]", "")) end
 
 -- add one kill; returns true if it was new
-local function AddEvent(killer, victim, zone, at, class)
+-- kind: "K" (kill) or "A" (assist)
+local POINTS = { K = 2, A = 1 }
+FM.KILL_POINTS = POINTS
+local function AddEvent(killer, victim, zone, at, class, kind)
+    kind = (kind == "A") and "A" or "K"
     at = tonumber(at)
     if not killer or not at or WeekKey(at) ~= WeekKey() then return false end
     local k = Store()
     killer, victim, zone = SafeField(killer), SafeField(victim), SafeField(zone)
     local id = killer .. "@" .. at .. "@" .. victim
     if class and class ~= "" and class ~= "?" then k.classes[killer] = class end
-    if k.events[id] then return false end
-    k.events[id] = { killer = killer, victim = victim, zone = zone, at = at }
+    if k.events[id] then
+        -- the same event seen as an assist and as a kill: the kill wins
+        if kind == "K" and k.events[id].kind == "A" then k.events[id].kind = nil; return true end
+        return false
+    end
+    k.events[id] = { killer = killer, victim = victim, zone = zone, at = at, kind = kind == "A" and "A" or nil }
     k.classes[killer] = ClassOf(killer) or k.classes[killer]
     -- keep the store bounded (drop the oldest)
     local n, oldestId, oldestAt = 0, nil, math.huge
@@ -491,11 +499,17 @@ function FM:WeekLabel()
     return WeekKey()
 end
 
+-- ranked by points: kill = 2, assist = 1
 function FM:Leaderboard(limit)
-    local counts = {}
-    for _, e in pairs(Store().events) do counts[e.killer] = (counts[e.killer] or 0) + 1 end
+    local by = {}
+    for _, e in pairs(Store().events) do
+        local r = by[e.killer] or { name = e.killer, n = 0, k = 0, a = 0 }
+        if e.kind == "A" then r.a = r.a + 1 else r.k = r.k + 1 end
+        r.n = r.n + POINTS[e.kind or "K"]
+        by[e.killer] = r
+    end
     local t = {}
-    for name, n in pairs(counts) do t[#t + 1] = { name = name, n = n } end
+    for _, r in pairs(by) do t[#t + 1] = r end
     table.sort(t, function(a, b) if a.n ~= b.n then return a.n > b.n end return a.name < b.name end)
     while limit and #t > limit do table.remove(t) end
     return t
@@ -511,7 +525,7 @@ local function Digest()
     local n, sum = 0, 0
     for _, e in pairs(Store().events) do
         n = n + 1
-        sum = (sum + e.at % 1000003 + #e.killer * 7 + #e.victim) % 2147483647
+        sum = (sum + e.at % 1000003 + #e.killer * 7 + #e.victim + (e.kind == "A" and 13 or 0)) % 2147483647
     end
     return n, sum
 end
@@ -540,7 +554,7 @@ local function SendAll(g)
     local k = Store()
     local buf, len = {}, 0
     for _, e in pairs(k.events) do
-        local s = ("%s~%s~%s~%d~%s"):format(e.killer, e.victim, e.zone, e.at, k.classes[e.killer] or "")
+        local s = ("%s~%s~%s~%d~%s~%s"):format(e.killer, e.victim, e.zone, e.at, k.classes[e.killer] or "", e.kind or "K")
         if len + #s + 1 > 200 and #buf > 0 then
             Queue(g, "KS|" .. table.concat(buf, ";"))
             buf, len = {}, 0
@@ -587,8 +601,8 @@ end
 FM.Handlers.KS = function(self, p, code)
     local added = 0
     for entry in tostring(p[2] or ""):gmatch("[^;]+") do
-        local killer, victim, zone, at, class = strsplit("~", entry)
-        if AddEvent(killer, victim, zone, at, class) then added = added + 1 end
+        local killer, victim, zone, at, class, kind = strsplit("~", entry)
+        if AddEvent(killer, victim, zone, at, class, kind) then added = added + 1 end
     end
     if added > 0 then Changed() end
 end
@@ -608,39 +622,86 @@ local function ScanUnits(fn)
     for i = 1, 40 do fn("nameplate" .. i) end
 end
 
-local function CheckKills()
+-- Is this enemy fighting one of us (me or a group member)?
+local function FightingFriend(u)
+    local t = u .. "target"
+    if not UnitExists(t) then return false end
+    if UnitIsUnit(t, "player") then return true end
+    local name = UnitName(t)
+    if not name then return false end
+    for _, list in pairs(FM.members) do
+        for _, m in pairs(list) do if m.name == name then return true end end
+    end
+    return false
+end
+
+local lastTarget = {}   -- [guid] = GetTime() we last had it as our target
+
+local function Credit(u, guid, kind)
+    credited[guid] = GetTime()
+    local victim = Clean(UnitName(u))
+    local me = UnitName("player")
+    local at, zone = time(), SafeField(ZoneName())
+    AddEvent(me, victim, zone, at, select(2, UnitClass("player")), kind)
+    Changed()
+    if kind == "A" then
+        FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffffbb66Assist on %s|r (%s) +1"):format(victim, zone))
+    else
+        FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s) +2"):format(victim, zone))
+    end
+    Broadcast(("KILL|%s|%s|%d|%s"):format(SafeField(victim), zone, at, kind))
+    if FM.OnKill then FM:OnKill(me, victim) end
+end
+
+-- Look at one unit: note who we fight, credit the ones that died.
+--   Kill:   it was our target (now or in the last 5 s) when it died
+--   Assist: we fought it, or it was fighting one of us, in the last 30 s
+local function CheckUnit(u)
+    if not UnitExists(u) or not UnitIsPlayer(u) or not UnitCanAttack("player", u) then return end
+    local guid = UnitGUID(u)
+    if not guid then return end
     local now = GetTime()
+    if UnitIsDeadOrGhost(u) then
+        if credited[guid] or not engaged[guid] or now - engaged[guid] > 30 then return end
+        local mine = UnitIsUnit(u, "target") or (lastTarget[guid] and now - lastTarget[guid] < 5)
+        Credit(u, guid, mine and "K" or "A")
+        return
+    end
+    if UnitIsUnit(u, "target") then lastTarget[guid] = now end
+    if UnitAffectingCombat(u) and (FM.IsHostilePlayerFightingMe(u) or FightingFriend(u)) then
+        engaged[guid] = now
+    end
+end
+
+local function CheckKills()
     if not FM.IsWorldPvPArea() then return end
-    ScanUnits(function(u)
-        if not UnitExists(u) or not UnitIsPlayer(u) then return end
-        local guid = UnitGUID(u)
-        if not guid then return end
-        if FM.IsHostilePlayerFightingMe(u) then
-            engaged[guid] = now
-        elseif engaged[guid] and UnitIsDeadOrGhost(u) and not credited[guid] and now - engaged[guid] < 20 then
-            credited[guid] = now
-            local victim = Clean(UnitName(u))
-            local me = UnitName("player")
-            local at, zone = time(), SafeField(ZoneName())
-            AddEvent(me, victim, zone, at, select(2, UnitClass("player")))
-            Changed()
-            FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s)"):format(victim, zone))
-            Broadcast(("KILL|%s|%s|%d"):format(SafeField(victim), zone, at))
-            if FM.OnKill then FM:OnKill(me, victim) end
-        end
-    end)
+    ScanUnits(CheckUnit)
+    local now = GetTime()
     for guid, t in pairs(engaged) do if now - t > 60 then engaged[guid] = nil end end
+    for guid, t in pairs(lastTarget) do if now - t > 60 then lastTarget[guid] = nil end end
     for guid, t in pairs(credited) do if now - t > 300 then credited[guid] = nil end end
 end
+
+-- nameplates disappear quickly on death: check them the moment their health changes
+local killEv = CreateFrame("Frame")
+killEv:RegisterEvent("UNIT_HEALTH")
+killEv:RegisterEvent("PLAYER_TARGET_CHANGED")
+killEv:SetScript("OnEvent", function(_, event, unit)
+    if not FM.IsWorldPvPArea or not FM.IsWorldPvPArea() then return end
+    if event == "PLAYER_TARGET_CHANGED" then CheckUnit("target") return end
+    if unit and (unit == "target" or unit == "focus" or unit:find("^nameplate")) then CheckUnit(unit) end
+end)
 
 FM.Handlers.KILL = function(self, p, code, sender, short)
     -- KILL|victim|zone|time  (older versions send no time)
     local at = (p[4] and p[4] ~= code) and tonumber(p[4]) or time()
+    local kind = (p[5] == "A") and "A" or "K"
     local class
     for _, m in pairs(self.members[code] or {}) do if m.name == short then class = m.class end end
-    if not AddEvent(short, p[2], p[3], at, class) then return end -- already known (e.g. via another group)
+    if not AddEvent(short, p[2], p[3], at, class, kind) then return end -- already known (e.g. via another group)
     Changed()
-    self:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800%s killed %s|r (%s)"):format(short, p[2] or "?", p[3] or "?"))
+    self:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800%s %s %s|r (%s)"):format(short,
+        kind == "A" and "helped kill" or "killed", p[2] or "?", p[3] or "?"))
     if self.OnKill then self:OnKill(short, p[2]) end
 end
 
