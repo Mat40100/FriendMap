@@ -1,8 +1,7 @@
 # FriendMap changelog
 
 ## 1.6.2
-- **Enemy sightings:** when you see an enemy player of your level or higher in the open world (target, mouseover or nameplate), a red marker appears on your friends' maps for 2 minutes, with the enemy's name, level and class. `/fm spots` or the map menu turns it off.
-- **Revenge:** when an enemy kills you in world PvP, your groups are told and the killer goes on the revenge list for 2 hours. When anyone in the group sees them again, everyone gets a purple **REVENGE** alert and marker. Killing them settles it. `/fm revenge` shows the list.
+- **Revenge:** when an enemy kills you in world PvP, your groups are told and the killer goes on the revenge list for 2 hours. When anyone in the group sees them again, everyone gets a purple **REVENGE** alert and a marker on the map for 2 minutes. Killing them settles it. `/fm revenge` shows the list.
 - Friends now show as a **light circle in their class colour** on every map (Blizzard, MelloUI, OpenMap) and on the minimap. Prefer the class icons? `/fm icons` or the map menu switches back.
 
 ## 1.6.1

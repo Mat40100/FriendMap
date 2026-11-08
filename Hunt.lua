@@ -1,19 +1,14 @@
--- Enemy sightings + Revenge.
---  * Sightings: a hostile player of your level or higher seen in the open world
---    (target, mouseover, nameplates) shows as a red marker on your friends' maps for 2 minutes.
---  * Revenge: when an enemy kills a group member, they go on the revenge list. Anyone in the
+-- Revenge: when an enemy kills a group member, they go on the revenge list. Anyone in the
 --    group who then sees them gets an alert, and so does everyone else. Killing them clears it.
 local FM = FriendMap
 local HBD = LibStub("HereBeDragons-2.0")
 
 local SPOT_LIFE      = 120        -- marker on the map (s)
 local SPOT_SAME      = 120        -- don't re-send the same enemy within (s)
-local SPOT_ANY       = 8          -- min seconds between two sightings sent
 local REVENGE_KEEP   = 2 * 3600   -- an enemy stays on the revenge list (s, real time)
 local REVENGE_ALERT  = 90         -- re-alert about the same revenge target after (s)
 local KILLER_WINDOW  = 15         -- the last enemy who fought us within this counts as the killer
 
-FM.MarkerKinds.enemy   = { r = 1, g = 0.25, b = 0.25, icon = "Interface\\Icons\\Ability_DualWield", life = SPOT_LIFE }
 FM.MarkerKinds.revenge = { r = 0.75, g = 0.2, b = 1, icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_8", life = SPOT_LIFE }
 
 local function Clean(s) return (tostring(s or ""):gsub("[|~;]", "")) end
@@ -30,7 +25,6 @@ local function ClassName(class) return (LOCALIZED_CLASS_NAMES_MALE or {})[class 
 
 local function DB()
     FriendMapDB.revenge = FriendMapDB.revenge or {}
-    if FriendMapDB.spots == nil then FriendMapDB.spots = true end
     local now = time()
     for name, e in pairs(FriendMapDB.revenge) do
         if now - (e.at or 0) > REVENGE_KEEP then FriendMapDB.revenge[name] = nil end
@@ -60,7 +54,7 @@ local function ShowSpot(name, class, level, inst, x, y, seenBy, victim)
     local lvl = (tonumber(level) or 0) > 0 and level or "??"
     local tip = ("%s - level %s %s\nseen by %s"):format(name, lvl, ClassName(class), seenBy)
     if victim and victim ~= "" then tip = tip .. ("\n|cffcc66ffKilled %s - REVENGE!|r"):format(victim) end
-    spotMarkers[name] = FM:ShowMarker(victim and victim ~= "" and "revenge" or "enemy", inst, x, y, tip, name)
+    spotMarkers[name] = FM:ShowMarker("revenge", inst, x, y, tip, name)
 end
 
 ----------------------------------------------------------------------
@@ -118,9 +112,9 @@ function FM:OnKill(killer, victim)
 end
 
 ----------------------------------------------------------------------
--- Seeing enemies
+-- Seeing a revenge target
 ----------------------------------------------------------------------
-local lastSent, lastAny, lastAlert = {}, 0, {}
+local lastSent, lastAlert = {}, {}
 
 local function Seen(u)
     if not UnitExists(u) or not UnitIsPlayer(u) or not UnitCanAttack("player", u) or UnitIsDeadOrGhost(u) then return end
@@ -130,24 +124,21 @@ local function Seen(u)
     local class, level = select(2, UnitClass(u)), UnitLevel(u)
     local now = GetTime()
     local rev = DB()[name]
+    if not rev then return end
 
     -- revenge target: alert me (and the group) right away
-    if rev and now - (lastAlert[name] or -999) > REVENGE_ALERT then
+    if now - (lastAlert[name] or -999) > REVENGE_ALERT then
         lastAlert[name] = now
         Alert(("|cffcc66ffREVENGE: %s is here!|r (killed %s)"):format(name, rev.victim or "?"))
         pcall(PlaySound, SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959)
     end
 
     -- send the sighting to the group
-    if not FriendMapDB.spots and not rev then return end
-    local strong = level == -1 or level >= (UnitLevel("player") or 1)
-    if not strong and not rev then return end
     if now - (lastSent[name] or -999) < SPOT_SAME then return end
-    if now - lastAny < SPOT_ANY and not rev then return end
     local x, y, inst = HBD:GetPlayerWorldPosition()
     if not x then return end
-    lastSent[name], lastAny = now, now
-    Broadcast(("SPOT|%s|%s|%d|%d|%.1f|%.1f|%s"):format(name, class or "", level or 0, inst, x, y, rev and Clean(rev.victim) or ""))
+    lastSent[name] = now
+    Broadcast(("SPOT|%s|%s|%d|%d|%.1f|%.1f|%s"):format(name, class or "", level or 0, inst, x, y, Clean(rev.victim)))
 end
 
 FM.Handlers.SPOT = function(self, p, code, sender, short)
@@ -157,7 +148,7 @@ FM.Handlers.SPOT = function(self, p, code, sender, short)
     if name == "" or not (inst and x and y) then return end
     local victim = (p[8] and p[8] ~= code and p[8] ~= "") and p[8] or nil
     if not victim and DB()[name] then victim = DB()[name].victim end
-    if not FriendMapDB.spots and not victim then return end
+    if not victim then return end   -- only revenge targets are reported
     ShowSpot(name, class, level, inst, x, y, short, victim)
     local where = self:DistanceText(inst, x, y)
     if victim then
@@ -167,9 +158,6 @@ FM.Handlers.SPOT = function(self, p, code, sender, short)
             Alert(("|cffcc66ffREVENGE: %s (killed %s) spotted by %s|r - %s"):format(name, victim, short, where))
             pcall(PlaySound, SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959)
         end
-    else
-        self:Print(("|cffff4040Enemy spotted:|r %s (level %s %s) by %s - %s")
-            :format(Colored(name, class), level > 0 and level or "??", ClassName(class), short, where))
     end
 end
 
@@ -191,14 +179,9 @@ end)
 C_Timer.NewTicker(0.5, NoteAttacker)
 
 ----------------------------------------------------------------------
--- Commands: /fm spots (on/off), /fm revenge (list)
+-- Command: /fm revenge (list)
 ----------------------------------------------------------------------
 FM.SlashExtra = FM.SlashExtra or {}
-FM.SlashExtra.spots = function()
-    DB()
-    FriendMapDB.spots = not FriendMapDB.spots
-    FM:Print("Enemy sightings (send and show): " .. (FriendMapDB.spots and "|cff00ff00ON|r" or "|cffff0000OFF|r"))
-end
 FM.SlashExtra.revenge = function(rest)
     if rest == "clear" then FriendMapDB.revenge = {}; FM:Print("Revenge list cleared.") return end
     local list = DB()

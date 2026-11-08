@@ -90,7 +90,6 @@ Choose which icons it shows with the **Quick bar** button in `/fm`, `/fm bar`, o
 | `/fm rally` / `/fm rally clear` | Set / clear the rally point at your position |
 | `/fm rally off` / `/fm rally on` | Hide / show the arrow to the rally point |
 | `/fm icons` | Switch friends between class-coloured circles and class icons |
-| `/fm spots` | Turn enemy sightings on / off |
 | `/fm revenge` / `/fm revenge clear` | Show / clear the revenge list |
 | `/fm top` | Open the weekly world PvP leaderboard |
 | `/fm members` | Show every player seen in each of your groups (online / last seen) |
