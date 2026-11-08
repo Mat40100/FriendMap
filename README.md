@@ -10,6 +10,15 @@ A World of Warcraft addon (WoW Forever client) that shows your friends on the wo
 - **Groups**: create as many as you like. Each group uses its own hidden, password-protected addon channel; nothing shows up in your chat.
 - **Easy joining**: in-game invites (Accept/Decline popup), clickable chat links, or a share code you can paste anywhere (Discord…).
 - **World PvP**: a pulsing red glow surrounds a friend's icon while they are in a world PvP fight, and (optionally) your groups get an alert when you start one.
+- **Map pings**: Alt+click the world map to drop a pulsing marker on all your friends' maps (with a sound).
+- **Help!**: one button (or automatic below 30% health in a PvP fight) alerts your group, shows where you are and points their arrow at you.
+- **Trails**: faint dots show where each friend went in the last 3 minutes.
+- **Distance & arrow**: tooltips show "340 yd NE"; click a friend on the map to get an on-screen arrow pointing to them.
+- **Status**: a short status ("farming", "LFG"...) shown under your name on the map.
+- **Kill feed & leaderboard**: your group sees your world PvP kills; weekly ranking in the window and `/fm top`.
+- **Level-up & achievement news**: announced to the group, with a golden glow on the icon.
+- **Rally point**: Alt+Shift+click the map (or **Rally here**) to place a flag everyone gets an arrow to.
+- **Zone heatmap**: on the continent map, each zone shows how many friends are in it.
 
 ## Installation
 
@@ -54,6 +63,14 @@ To update, replace the folder with the new version (your groups are kept, they'r
 | `/fm minimap` | Turn minimap icons on/off |
 | `/fm pvp` | Turn announcing your world PvP fights on/off |
 | `/fm pvpalert` | Turn the on-screen alert for friends' fights on/off |
+| `/fm ping [text]` | Ping your position |
+| `/fm help` | Call your group for help |
+| `/fm autohelp` | Turn the automatic help call on/off |
+| `/fm status <text>` | Set your status (empty = clear) |
+| `/fm track <name>` | Arrow towards a friend (no name = stop) |
+| `/fm rally` / `/fm rally clear` | Set / clear the rally point at your position |
+| `/fm top` | Weekly world PvP kill leaderboard |
+| `/fm trails` / `/fm heatmap` | Turn trails / zone heatmap on/off |
 
 `[group]` can be the group's number from `/fm list`, or its name. Without it, the first group is used.
 
@@ -62,7 +79,7 @@ To update, replace the folder with the new version (your groups are kept, they'r
 - Everyone must have FriendMap installed.
 - Channels and invites only reach players on your realm or connected realms.
 - Positions usually can't be read inside dungeons/raids, so friends there won't show until they leave.
-- PvP detection works from your target, focus, mouseover and nameplates (the combat log is unavailable to addons on this client), so turning enemy nameplates on helps.
+- PvP detection and the kill feed work from your target, focus, mouseover and nameplates (the combat log is unavailable to addons on this client), so turning enemy nameplates on helps. A kill is credited when an enemy you were fighting dies, even if someone else landed the last hit.
 - The clickable chat link may be stripped by the server; the share code always works.
 
 ## Credits

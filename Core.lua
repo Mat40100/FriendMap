@@ -39,6 +39,8 @@ local function Sanitize(name)
     return name ~= "" and name or "Friends"
 end
 
+FM.Sanitize = Sanitize
+
 function FM:ChannelName(code) return self.CHANNEL_TAG .. code end
 
 function FM:Groups() return FriendMapDB.groups end
@@ -212,7 +214,8 @@ function FM:BroadcastPosition(force)
 
     local _, class = UnitClass("player")
     local pvpLeft = math.max(0, math.floor((self.pvpUntil or 0) - now))
-    local msg = ("P|%d|%.1f|%.1f|%s|%d|%d"):format(inst, x, y, class or "WARRIOR", UnitLevel("player") or 0, pvpLeft)
+    local status = (FriendMapDB.status or ""):gsub("[|:]", "")
+    local msg = ("P|%d|%.1f|%.1f|%s|%d|%d|%s"):format(inst, x, y, class or "WARRIOR", UnitLevel("player") or 0, pvpLeft, status)
     for _, g in ipairs(FriendMapDB.groups) do self:SendToGroup(g, msg) end
 end
 
@@ -234,6 +237,9 @@ local function IsHostilePlayerFightingMe(unit)
     if not UnitAffectingCombat(unit) then return false end
     return UnitIsUnit(unit .. "target", "player") or UnitIsUnit("target", unit)
 end
+
+FM.IsHostilePlayerFightingMe = IsHostilePlayerFightingMe
+FM.IsWorldPvPArea = IsWorldPvPArea
 
 local function FindEnemy()
     for _, u in ipairs({ "target", "focus", "mouseover" }) do
@@ -300,6 +306,8 @@ function FM:OnAddonMessage(text, distribution, sender)
         m.name, m.inst, m.x, m.y, m.class, m.level, m.t = short, inst, x, y, parts[5], tonumber(parts[6]), GetTime()
         local pvpLeft = tonumber(parts[7]) or 0
         m.pvpUntil = pvpLeft > 0 and (GetTime() + pvpLeft) or nil
+        m.status = (parts[8] and parts[8] ~= code and parts[8] ~= "") and parts[8] or nil
+        if self.OnMemberMoved then self:OnMemberMoved(m) end
         self.members[code][sender] = m
         if isNew then
             -- greet newcomers so they see us right away
@@ -319,6 +327,8 @@ function FM:OnAddonMessage(text, distribution, sender)
             RaidNotice_AddMessage(RaidWarningFrame, short .. " is in a world PvP fight!", ChatTypeInfo["RAID_WARNING"])
         end
         PlaySound(SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959)
+    elseif self.Handlers and self.Handlers[cmd] then
+        self.Handlers[cmd](self, parts, code, sender, short)
     elseif cmd == "BYE" then
         self:RemoveMember(code, sender)
         self:RefreshUI()
@@ -441,7 +451,11 @@ ev:SetScript("OnEvent", function(_, event, ...)
 end)
 
 -- fast PvP check while in combat
-C_Timer.NewTicker(1, function() if FM.worldReady then FM:CheckPvP() end end)
+C_Timer.NewTicker(1, function()
+    if not FM.worldReady then return end
+    FM:CheckPvP()
+    if FM.OnTick then FM:OnTick() end
+end)
 
 local elapsedJoin = 0
 C_Timer.NewTicker(FM.SEND_INTERVAL, function()
@@ -497,6 +511,8 @@ function FM:Slash(msg)
     elseif cmd == "pvpalert" then
         FriendMapDB.pvpAlert = not FriendMapDB.pvpAlert
         FM:Print("On-screen alert for friends' PvP fights " .. (FriendMapDB.pvpAlert and "ON" or "OFF"))
+    elseif FM.SlashExtra and FM.SlashExtra[cmd] then
+        FM.SlashExtra[cmd](rest)
     elseif cmd == "list" then
         for i, g in ipairs(FriendMapDB.groups) do
             FM:Print(("%d. %s (%d online) %s"):format(i, g.name, FM:CountMembers(g.code),
@@ -513,5 +529,8 @@ function FM:Slash(msg)
         print("  /fm leave [group] | /fm list | /fm share | /fm minimap")
         print("  /fm pvp  - toggle announcing my world PvP fights")
         print("  /fm pvpalert  - toggle on-screen warning for friends' fights")
+        print("  /fm ping [text] | /fm help | /fm status <text> | /fm track <name>")
+        print("  /fm rally | /fm rally clear | /fm top | /fm trails | /fm heatmap")
+        print("  Map: Alt+click = ping, Alt+Shift+click = rally point, click a friend = track")
     end
 end

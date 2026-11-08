@@ -90,7 +90,7 @@ end
 
 local function Build()
     frame = CreateFrame("Frame", "FriendMapFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(470, 130 + MAX_ROWS * 44)
+    frame:SetSize(470, 190 + MAX_ROWS * 44)
     frame:SetPoint("CENTER")
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -138,15 +138,53 @@ local function Build()
     pvp:SetScript("OnClick", function(self) FriendMapDB.pvpAnnounce = self:GetChecked() and true or false end)
     frame.pvp = pvp
 
+    -- action bar: ping / help / rally / status
+    local ping = Button(frame, "Ping here", 80)
+    ping:SetPoint("TOPLEFT", 14, -86)
+    ping:SetScript("OnClick", function() FM.SlashExtra.ping("") end)
+
+    local help = Button(frame, "|cffff4444Help!|r", 60)
+    help:SetPoint("LEFT", ping, "RIGHT", 4, 0)
+    help:SetScript("OnClick", function() FM:SendHelp(false) end)
+
+    local rally = Button(frame, "Rally here", 80)
+    rally:SetPoint("LEFT", help, "RIGHT", 4, 0)
+    rally:SetScript("OnClick", function() FM.SlashExtra.rally(IsShiftKeyDown() and "clear" or "") end)
+    rally:SetScript("OnEnter", function(b)
+        GameTooltip:SetOwner(b, "ANCHOR_TOP"); GameTooltip:SetText("Set a rally point at your position\nShift-click: clear it"); GameTooltip:Show()
+    end)
+    rally:SetScript("OnLeave", GameTooltip_Hide)
+
+    local st = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    st:SetSize(170, 20)
+    st:SetPoint("LEFT", rally, "RIGHT", 12, 0)
+    st:SetAutoFocus(false)
+    st:SetMaxLetters(30)
+    st:SetScript("OnEnterPressed", function(e) FM:SetStatus(e:GetText()); e:ClearFocus() end)
+    st:SetScript("OnEscapePressed", function(e) e:SetText(FriendMapDB.status or ""); e:ClearFocus() end)
+    local stl = st:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    stl:SetPoint("BOTTOMLEFT", st, "TOPLEFT", 0, 1)
+    stl:SetText("My status (Enter to save)")
+    frame.status = st
+
+    frame.top = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    frame.top:SetPoint("TOPLEFT", 16, -116)
+    frame.top:SetWidth(440)
+    frame.top:SetJustifyH("LEFT")
+
+    local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    hint:SetPoint("BOTTOM", 0, 10)
+    hint:SetText("Map: Alt+click = ping, Alt+Shift+click = rally, click a friend = arrow")
+
     frame.empty = frame:CreateFontString(nil, "OVERLAY", "GameFontDisable")
-    frame.empty:SetPoint("TOP", 0, -110)
+    frame.empty:SetPoint("TOP", 0, -170)
     frame.empty:SetText("No groups yet. Create one or join with a code.")
 
     frame.rows = {}
     for i = 1, MAX_ROWS do
         local r = CreateFrame("Frame", nil, frame)
         r:SetSize(440, 40)
-        r:SetPoint("TOPLEFT", 14, -82 - (i - 1) * 44)
+        r:SetPoint("TOPLEFT", 14, -142 - (i - 1) * 44)
         r.bg = r:CreateTexture(nil, "BACKGROUND")
         r.bg:SetAllPoints()
         r.bg:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.04 or 0.08)
@@ -194,6 +232,11 @@ function FM:RefreshUI()
     if not frame or not frame:IsShown() then return end
     frame.share:SetChecked(FriendMapDB.sharing)
     frame.pvp:SetChecked(FriendMapDB.pvpAnnounce)
+    if not frame.status:HasFocus() then frame.status:SetText(FriendMapDB.status or "") end
+    local top = FM.Leaderboard and FM:Leaderboard(5) or {}
+    local parts = {}
+    for i, e in ipairs(top) do parts[i] = ("%s %d"):format(e.name, e.n) end
+    frame.top:SetText("|cffff8800PvP kills this week:|r " .. (#parts > 0 and table.concat(parts, ", ") or "none yet"))
     local groups = FriendMapDB.groups
     frame.empty:SetShown(#groups == 0)
     for i, r in ipairs(frame.rows) do

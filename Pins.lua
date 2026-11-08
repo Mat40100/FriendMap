@@ -55,17 +55,23 @@ local function CreatePin(isWorld)
         GameTooltip:AddLine(m.name, ClassColor(m.class))
         local className = (LOCALIZED_CLASS_NAMES_MALE or {})[m.class] or m.class
         GameTooltip:AddLine(("Level %s %s"):format(m.level or "?", className or ""), 1, 1, 1)
+        if m.status then GameTooltip:AddLine('"' .. m.status .. '"', 0.8, 0.8, 1) end
         GameTooltip:AddLine("Group: " .. (self.groupName or "?"), 0.2, 1, 0.6)
+        if FM.DistanceText then GameTooltip:AddLine(FM:DistanceText(m.inst, m.x, m.y), 1, 0.82, 0) end
         if m.pvpUntil and m.pvpUntil > GetTime() then
             GameTooltip:AddLine("In a world PvP fight!", 1, 0.2, 0.2)
         end
         GameTooltip:AddLine(("Updated %ds ago"):format(GetTime() - m.t), 0.6, 0.6, 0.6)
+        GameTooltip:AddLine("Click: track with arrow - Right-click: whisper", 0.5, 0.5, 0.5)
         GameTooltip:Show()
     end)
     f:SetScript("OnLeave", function() GameTooltip:Hide() end)
     f:SetScript("OnMouseUp", function(self, button)
-        if button == "RightButton" and self.member and ChatFrame_SendTell then
+        if not self.member then return end
+        if button == "RightButton" and ChatFrame_SendTell then
             ChatFrame_SendTell(self.member.name)
+        elseif button == "LeftButton" and FM.Track then
+            FM:Track(self.member.name)
         end
     end)
     return f
@@ -81,14 +87,18 @@ local function Style(f, m, groupName)
         f.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         f.icon:SetTexCoord(0, 1, 0, 1)
     end
-    local inPvP = m.pvpUntil and m.pvpUntil > GetTime()
-    if inPvP and not f.glow:IsShown() then
+    -- gold glow = just levelled up / achievement, red glow = PvP fight
+    local now = GetTime()
+    local flash = m.flashUntil and m.flashUntil > now
+    local inPvP = m.pvpUntil and m.pvpUntil > now
+    if flash then f.glow:SetVertexColor(1, 0.8, 0.1, 0.9) else f.glow:SetVertexColor(1, 0, 0, 0.85) end
+    if (inPvP or flash) and not f.glow:IsShown() then
         f.glow:Show(); f.glowAnim:Play()
-    elseif not inPvP and f.glow:IsShown() then
+    elseif not (inPvP or flash) and f.glow:IsShown() then
         f.glowAnim:Stop(); f.glow:Hide()
     end
     if f.label then
-        f.label:SetText(m.name)
+        f.label:SetText(m.status and (m.name .. "\n|cffaaaaff" .. m.status .. "|r") or m.name)
         f.label:SetTextColor(ClassColor(m.class))
     end
 end

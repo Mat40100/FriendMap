@@ -10,6 +10,15 @@ Un addon World of Warcraft (client WoW Forever) qui affiche vos amis sur la cart
 - **Groupes** : créez-en autant que vous voulez. Chaque groupe utilise son propre canal d'addon caché et protégé par mot de passe ; rien n'apparaît dans votre chat.
 - **Rejoindre facilement** : invitations en jeu (fenêtre Accepter/Refuser), liens cliquables dans le chat, ou un code de partage à coller n'importe où (Discord…).
 - **JcJ sauvage** : un halo rouge pulsant entoure l'icône d'un ami pendant un combat JcJ en extérieur et, si l'option est activée, vos groupes sont prévenus quand vous en commencez un.
+- **Pings sur la carte** : Alt+clic sur la carte du monde pour faire apparaître un marqueur pulsant chez tous vos amis (avec un son).
+- **À l'aide !** : un bouton (ou automatiquement sous 30 % de vie en combat JcJ) alerte votre groupe, montre où vous êtes et oriente leur flèche vers vous.
+- **Traces** : de petits points montrent le trajet de chaque ami sur les 3 dernières minutes.
+- **Distance et flèche** : les infobulles indiquent « 340 m NE » ; cliquez sur un ami sur la carte pour afficher une flèche qui pointe vers lui.
+- **Statut** : un court statut (« farm », « cherche groupe »…) affiché sous votre nom sur la carte.
+- **Fil des victimes et classement** : votre groupe voit vos victimes en JcJ sauvage ; classement hebdomadaire dans la fenêtre et avec `/fm top`.
+- **Niveaux et hauts faits** : annoncés au groupe, avec un halo doré sur l'icône.
+- **Point de ralliement** : Alt+Maj+clic sur la carte (ou **Rally here**) pour poser un drapeau vers lequel tout le monde reçoit une flèche.
+- **Carte de chaleur** : sur la carte du continent, chaque zone affiche combien d'amis s'y trouvent.
 
 ## Installation
 
@@ -54,6 +63,14 @@ Pour mettre à jour, remplacez le dossier par la nouvelle version (vos groupes s
 | `/fm minimap` | Activer/désactiver les icônes sur la minicarte |
 | `/fm pvp` | Activer/désactiver l'annonce de vos combats JcJ sauvage |
 | `/fm pvpalert` | Activer/désactiver l'alerte à l'écran pour les combats de vos amis |
+| `/fm ping [texte]` | Ping à votre position |
+| `/fm help` | Appeler votre groupe à l'aide |
+| `/fm autohelp` | Activer/désactiver l'appel à l'aide automatique |
+| `/fm status <texte>` | Définir votre statut (vide = effacer) |
+| `/fm track <nom>` | Flèche vers un ami (sans nom = arrêter) |
+| `/fm rally` / `/fm rally clear` | Poser / retirer le point de ralliement à votre position |
+| `/fm top` | Classement hebdomadaire des victimes en JcJ sauvage |
+| `/fm trails` / `/fm heatmap` | Activer/désactiver les traces / la carte de chaleur |
 
 `[groupe]` peut être le numéro du groupe dans `/fm list`, ou son nom. Sans lui, le premier groupe est utilisé.
 
@@ -62,7 +79,7 @@ Pour mettre à jour, remplacez le dossier par la nouvelle version (vos groupes s
 - Tout le monde doit avoir FriendMap installé.
 - Les canaux et invitations ne fonctionnent qu'entre joueurs du même royaume ou de royaumes connectés.
 - La position ne peut généralement pas être lue en donjon/raid : les amis qui s'y trouvent n'apparaissent qu'à leur sortie.
-- La détection JcJ se base sur votre cible, focalisation, survol et barres d'info (le journal de combat est inaccessible aux addons sur ce client) : activer les barres d'info des ennemis aide.
+- La détection JcJ et le fil des victimes se basent sur votre cible, focalisation, survol et barres d'info (le journal de combat est inaccessible aux addons sur ce client) : activer les barres d'info des ennemis aide. Une victime est comptée quand un ennemi que vous combattiez meurt, même si quelqu'un d'autre a porté le dernier coup.
 - Le lien cliquable peut être supprimé par le serveur ; le code de partage fonctionne toujours.
 
 ## Crédits
