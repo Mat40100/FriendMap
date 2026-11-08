@@ -1,5 +1,7 @@
 # FriendMap
 
+*[Version française](README.fr.md)*
+
 A World of Warcraft addon (WoW Forever client) that shows your friends on the world map and minimap — class icon plus a small class-coloured nameplate — as long as they also run FriendMap and share a group with you.
 
 ## Features
