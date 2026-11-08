@@ -302,11 +302,16 @@ watcher:SetScript("OnUpdate", function(_, dt)
     if map then
         Place(map, kind)
         btn:Show()
-        if not wasShown and FM.RedrawMapExtras then FM.RedrawMapExtras() end
-        wasShown = true
+        if wasShown ~= kind then
+            -- a map opened (or switched): friends drawn in that map's style
+            if FM.Pins then FM.Pins:Refresh() end
+            if FM.RedrawMapExtras then FM.RedrawMapExtras() end
+        end
+        wasShown = kind
     else
         btn:Hide(); menu:Hide()
         btn.placedFor = nil
+        if wasShown and FM.Pins then FM.Pins:Refresh() end
         wasShown = false
     end
 end)

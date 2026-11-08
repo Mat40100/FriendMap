@@ -1,6 +1,7 @@
 -- Map / minimap pins: class icon + small class-coloured nameplate.
 local FM = FriendMap
 local HBDP = LibStub("HereBeDragons-Pins-2.0")
+local HBD = LibStub("HereBeDragons-2.0")
 
 local Pins = { world = {}, mini = {} }
 FM.Pins = Pins
@@ -109,6 +110,81 @@ local function Get(pool, key, isWorld)
     return f
 end
 
+----------------------------------------------------------------------
+-- MelloUI's map: friends drawn by MelloUI itself (its public pin API), with
+-- the same class pictures it uses for your party members.
+----------------------------------------------------------------------
+local MELLO_ICONS = "Interface\\AddOns\\MelloUI\\Media\\Textures\\Icons\\"
+local MELLO_OWNER = "FriendMap_friends"
+local MELLO_MAPS = { 1414, 1415, 947 }  -- Kalimdor, Eastern Kingdoms, Azeroth
+local melloKeys = {}
+
+local function Mello()
+    local M = _G.MelloUI and _G.MelloUI.Map
+    if M and type(M.AddPin) == "function" then return M end
+end
+
+local function MelloPlace(M, key, wx, wy, spec)
+    for _, mapID in ipairs(MELLO_MAPS) do
+        local x, y = HBD:GetZoneCoordinatesFromWorld(wx, wy, mapID)
+        if x and x >= 0 and x <= 1 and y >= 0 and y <= 1 and M:AddPin(MELLO_OWNER, key, mapID, x, y, spec) then
+            melloKeys[key] = true
+            return true
+        end
+    end
+end
+
+local function MelloTip(m, groupName)
+    return function()
+        local lines = {}
+        local className = (LOCALIZED_CLASS_NAMES_MALE or {})[m.class] or m.class or ""
+        lines[#lines + 1] = ("Level %s %s"):format(m.level or "?", className)
+        if m.status then lines[#lines + 1] = '"' .. m.status .. '"' end
+        if FM.DistanceText then lines[#lines + 1] = FM:DistanceText(m.inst, m.x, m.y) end
+        if groupName then lines[#lines + 1] = "Group: " .. groupName end
+        local now = GetTime()
+        if m.pvpUntil and m.pvpUntil > now then lines[#lines + 1] = "|cffff3333In a world PvP fight!|r" end
+        if m.flashUntil and m.flashUntil > now then lines[#lines + 1] = "|cffffd100Just levelled up!|r" end
+        lines[#lines + 1] = "|cff888888Click: track with arrow|r"
+        local c = RAID_CLASS_COLORS[m.class or ""]
+        local title = c and ("|c%s%s|r"):format(c.colorStr or "ffffffff", m.name) or m.name
+        return title, table.concat(lines, "\n")
+    end
+end
+
+local function ClearMello()
+    local M = Mello()
+    if M and next(melloKeys) then M:ClearPins(MELLO_OWNER) end
+    wipe(melloKeys)
+end
+
+local function DrawMello(best)
+    local M = Mello()
+    if not M then return false end
+    M:ClearPins(MELLO_OWNER)
+    wipe(melloKeys)
+    local now = GetTime()
+    for key, e in pairs(best) do
+        local m = e.m
+        -- coloured disc under the icon: red = PvP fight, gold = level-up / achievement
+        local glow = (m.flashUntil and m.flashUntil > now) and { 1, 0.8, 0.1 }
+            or (m.pvpUntil and m.pvpUntil > now) and { 1, 0.1, 0.1 }
+        if glow then
+            MelloPlace(M, key .. "#glow", m.x, m.y, {
+                icon = MELLO_ICONS .. "badge_disc", size = 26, rgb = glow, alpha = 0.75, show = "world",
+            })
+        end
+        local hasClass = m.class and RAID_CLASS_COLORS[m.class]
+        MelloPlace(M, key, m.x, m.y, {
+            icon = MELLO_ICONS .. (hasClass and ("class_" .. m.class) or "map_dot"),
+            size = 16, show = "world",
+            tip = MelloTip(m, e.group),
+            click = function() FM:Track(m.name) end,
+        })
+    end
+    return true
+end
+
 function Pins:Refresh()
     -- One pin per player, even if they're in several of our groups (keep freshest).
     local best = {}
@@ -121,8 +197,14 @@ function Pins:Refresh()
         end
     end
 
+    -- MelloUI's map open: MelloUI draws the friends in its own style, our world map icons step aside
+    -- (MelloUI would otherwise show them as well, borrowed from HereBeDragons)
+    local _, kind = FM.OpenMap and FM:OpenMap()
+    local onMello = kind == "mello" and DrawMello(best)
+    if not onMello then ClearMello() end
+
     for key, f in pairs(self.world) do
-        if not best[key] then HBDP:RemoveWorldMapIcon(Pins, f); f:Hide() end
+        if onMello or not best[key] then HBDP:RemoveWorldMapIcon(Pins, f); f:Hide() end
     end
     for key, f in pairs(self.mini) do
         if not best[key] or not FriendMapDB.minimap then HBDP:RemoveMinimapIcon(Pins, f); f:Hide() end
@@ -130,12 +212,16 @@ function Pins:Refresh()
 
     for key, e in pairs(best) do
         local m = e.m
-        local w = Get(self.world, key, true)
-        Style(w, m, e.group)
-        HBDP:AddWorldMapIconWorld(Pins, w, m.inst, m.x, m.y, HBD_PINS_WORLDMAP_SHOW_WORLD)
+        if not onMello then
+            local w = Get(self.world, key, true)
+            Style(w, m, e.group)
+            w:Show()
+            HBDP:AddWorldMapIconWorld(Pins, w, m.inst, m.x, m.y, HBD_PINS_WORLDMAP_SHOW_WORLD)
+        end
         if FriendMapDB.minimap then
             local mm = Get(self.mini, key, false)
             Style(mm, m, e.group)
+            mm:Show()
             HBDP:AddMinimapIconWorld(Pins, mm, m.inst, m.x, m.y, true)
         end
     end
