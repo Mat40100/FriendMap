@@ -213,24 +213,22 @@ end)
 -- The button next to the open map
 ----------------------------------------------------------------------
 local btn = CreateFrame("Button", "FriendMapMapButton", UIParent)
-btn:SetSize(26, 26)
+btn:SetSize(30, 30)
 btn:SetFrameStrata("FULLSCREEN_DIALOG")
 btn:SetClampedToScreen(true)
 btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 btn:Hide()
-btn.bg = btn:CreateTexture(nil, "BACKGROUND")
-btn.bg:SetAllPoints()
-btn.bg:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
-btn.bg:SetVertexColor(0, 0, 0, 0.75)
+-- FriendMap's own icon (gold ring included)
 btn.icon = btn:CreateTexture(nil, "ARTWORK")
-btn.icon:SetPoint("CENTER")
-btn.icon:SetSize(17, 17)
-btn.icon:SetTexture("Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon")
-btn.ring = btn:CreateTexture(nil, "OVERLAY")
-btn.ring:SetPoint("TOPLEFT", -6, 6)
-btn.ring:SetPoint("BOTTOMRIGHT", 22, -22)
-btn.ring:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-btn:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+btn.icon:SetAllPoints()
+btn.icon:SetTexture("Interface\\AddOns\\FriendMap\\Media\\Icon")
+btn.ring = btn:CreateTexture(nil, "OVERLAY") -- kept for compatibility, unused
+btn.ring:Hide()
+local hl = btn:CreateTexture(nil, "HIGHLIGHT")
+hl:SetAllPoints()
+hl:SetTexture("Interface\\AddOns\\FriendMap\\Media\\Icon")
+hl:SetBlendMode("ADD")
+hl:SetAlpha(0.35)
 btn:SetScript("OnClick", function(self)
     if menu:IsShown() then menu:Hide() else FM:ShowMapMenu(self) end
 end)
@@ -293,12 +291,10 @@ local function Place(map, kind)
     if rail then
         btn:SetSize(30, 30)                     -- same size as MelloUI's rail buttons
         btn:SetPoint("BOTTOM", rail, "BOTTOM", 0, 10)
-        btn.ring:Hide()
         btn.onRail = true
     else
-        btn.ring:Show()
         btn.onRail = false
-        btn:SetSize(26, 26)
+        btn:SetSize(30, 30)
         local o = saved or DEFAULT_OFFSET
         btn:SetPoint("TOPRIGHT", target, "TOPRIGHT", o[1], o[2])
     end

@@ -3,3 +3,4 @@ package-as: FriendMap
 ignore:
   - README.fr.md
   - .pkgmeta
+  - Media/FriendMap-512.png
