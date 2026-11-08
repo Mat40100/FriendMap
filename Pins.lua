@@ -88,7 +88,7 @@ local function Style(f, m, groupName)
     local circle = UseCircle()
     if circle ~= f.isCircle then
         f.isCircle = circle
-        local size = f.label and (circle and 14 or 22) or (circle and 10 or 16)
+        local size = f.label and (circle and 11 or 22) or (circle and 8 or 16)
         f:SetSize(size, size)
         f.glow:SetSize(size * 1.9, size * 1.9)
     end
@@ -96,7 +96,7 @@ local function Style(f, m, groupName)
         f.icon:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
         f.icon:SetTexCoord(0, 1, 0, 1)
         local r, g, b = ClassColor(m.class)
-        f.icon:SetVertexColor(r, g, b, 0.75)
+        f.icon:SetVertexColor(r, g, b, 1)
     elseif coords then
         f.icon:SetVertexColor(1, 1, 1, 1)
         f.icon:SetTexture(CLASS_ICONS)
@@ -197,8 +197,8 @@ local function DrawMello(best)
         local c = hasClass and RAID_CLASS_COLORS[m.class]
         MelloPlace(M, key, m.x, m.y, {
             icon = MELLO_ICONS .. ((not circle and hasClass) and ("class_" .. m.class) or "map_dot"),
-            size = circle and 12 or 16, show = "world",
-            rgb = circle and c and { c.r, c.g, c.b } or nil, alpha = circle and 0.8 or nil,
+            size = circle and 10 or 16, show = "world",
+            rgb = circle and c and { c.r, c.g, c.b } or nil, alpha = circle and 1 or nil,
             tip = MelloTip(m, e.group),
             click = function() FM:Track(m.name) end,
         })
