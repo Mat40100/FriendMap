@@ -397,13 +397,43 @@ local engaged, credited = {}, {}
 
 local function WeekKey() return date("%Y-%W") end
 
-local function AddKill(killer)
+local function ClassOf(name)
+    if name == UnitName("player") then return select(2, UnitClass("player")) end
+    for _, list in pairs(FM.members) do
+        for _, m in pairs(list) do
+            if m.name == name then return m.class end
+        end
+    end
+end
+
+local function AddKill(killer, victim, zone)
     local k = FriendMapDB.kills
     if k.week ~= WeekKey() then
-        k.week, k.counts = WeekKey(), {}
+        k.week, k.counts, k.classes, k.log = WeekKey(), {}, {}, {}
     end
     k.counts = k.counts or {}
+    k.classes = k.classes or {}
+    k.log = k.log or {}
     k.counts[killer] = (k.counts[killer] or 0) + 1
+    k.classes[killer] = ClassOf(killer) or k.classes[killer]
+    table.insert(k.log, 1, { killer = killer, victim = victim, zone = zone, at = time() })
+    while #k.log > 30 do table.remove(k.log) end
+    if FM.RefreshLeaderboard then FM:RefreshLeaderboard() end
+end
+
+function FM:KillLog()
+    local k = FriendMapDB.kills
+    if k.week ~= WeekKey() then return {} end
+    return k.log or {}
+end
+
+function FM:KillerClass(name)
+    local k = FriendMapDB.kills
+    return ClassOf(name) or (k.classes and k.classes[name])
+end
+
+function FM:WeekLabel()
+    return WeekKey()
 end
 
 function FM:Leaderboard(limit)
@@ -434,7 +464,7 @@ local function CheckKills()
             credited[guid] = now
             local victim = Clean(UnitName(u))
             local me = UnitName("player")
-            AddKill(me)
+            AddKill(me, victim, ZoneName())
             FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s)"):format(victim, ZoneName()))
             Broadcast(("KILL|%s|%s"):format(victim, Clean(ZoneName())))
         end
@@ -444,18 +474,13 @@ local function CheckKills()
 end
 
 FM.Handlers.KILL = function(self, p, code, sender, short)
-    AddKill(short)
+    AddKill(short, p[2], p[3])
     local g = self:GetGroup(code)
     self:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800%s killed %s|r (%s)"):format(short, p[2] or "?", p[3] or "?"))
     self:RefreshUI()
 end
 
-FM.SlashExtra.top = function()
-    local t = FM:Leaderboard(10)
-    if #t == 0 then FM:Print("No world PvP kills this week yet.") return end
-    FM:Print("World PvP kills this week:")
-    for i, e in ipairs(t) do print(("  %d. %s - %d"):format(i, e.name, e.n)) end
-end
+FM.SlashExtra.top = function() FM:ToggleLeaderboard() end
 
 ----------------------------------------------------------------------
 -- 7. Level-up & achievement news

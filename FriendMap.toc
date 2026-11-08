@@ -14,5 +14,6 @@ Pins.lua
 Features.lua
 MapMenu.lua
 QuickBar.lua
+Leaderboard.lua
 Version.lua
 UI.lua
