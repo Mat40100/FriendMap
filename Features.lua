@@ -265,7 +265,7 @@ function FM:DrawTrails()
     HBDP:RemoveAllWorldMapIcons(TrailRef)
     for i = 1, usedDots do dots[i]:Hide() end
     usedDots = 0
-    if not FriendMapDB.trails or not WorldMapFrame:IsShown() then return end
+    if not FriendMapDB.trails or not FM:IsAnyMapShown() then return end
     local seen, now = {}, GetTime()
     for _, list in pairs(self.members) do
         for sender, m in pairs(list) do
@@ -543,24 +543,76 @@ local function GetBadge(i)
     return b
 end
 
+local lastMelloHeat = ""
+
+local function ContinentOf(mapID)
+    local info = mapID and C_Map.GetMapInfo(mapID)
+    local guard = 0
+    while info and info.mapType ~= Enum.UIMapType.Continent and info.parentMapID and info.parentMapID > 0 and guard < 10 do
+        info = C_Map.GetMapInfo(info.parentMapID)
+        guard = guard + 1
+    end
+    if info and info.mapType == Enum.UIMapType.Continent then return info.mapID end
+end
+
 function FM:DrawHeatmap()
     HBDP:RemoveAllWorldMapIcons(HeatRef)
     for _, b in ipairs(badges) do b:Hide() end
-    if not FriendMapDB.heatmap or not WorldMapFrame:IsShown() then return end
-    local mapID = WorldMapFrame:GetMapID()
-    local info = mapID and C_Map.GetMapInfo(mapID)
-    if not info or not Enum or not Enum.UIMapType or info.mapType ~= Enum.UIMapType.Continent then return end
+    local M = _G.MelloUI and _G.MelloUI.Map
+    local _, kind = self:OpenMap()
+    if not FriendMapDB.heatmap or not kind or not (Enum and Enum.UIMapType) then
+        if M and M.ClearPins and lastMelloHeat ~= "" then M:ClearPins("FriendMap_heat"); lastMelloHeat = "" end
+        return
+    end
 
-    local counts, seen = {}, {}
+    local mapID
+    if kind == "blizzard" then
+        mapID = WorldMapFrame:GetMapID()
+        local info = mapID and C_Map.GetMapInfo(mapID)
+        if not info or info.mapType ~= Enum.UIMapType.Continent then return end
+    else
+        mapID = ContinentOf(self:ViewedMapID())   -- MelloUI: one seamless map, use the continent in view
+        if not mapID then return end
+    end
+
+    local counts, names, seen = {}, {}, {}
     for _, list in pairs(self.members) do
         for sender, m in pairs(list) do
             if not seen[sender] then
                 seen[sender] = true
                 local cx, cy = HBD:GetZoneCoordinatesFromWorld(m.x, m.y, mapID)
                 local zi = cx and C_Map.GetMapInfoAtPosition(mapID, cx, cy)
-                if zi and zi.mapID ~= mapID then counts[zi.mapID] = (counts[zi.mapID] or 0) + 1 end
+                if zi and zi.mapID ~= mapID then
+                    counts[zi.mapID] = (counts[zi.mapID] or 0) + 1
+                    names[zi.mapID] = (names[zi.mapID] and (names[zi.mapID] .. ", ") or "") .. m.name
+                end
             end
         end
+    end
+
+    if kind == "mello" then
+        -- MelloUI's own pin API; only rebuilt when something changed
+        local sig = {}
+        for z, n in pairs(counts) do sig[#sig + 1] = z .. "=" .. n end
+        table.sort(sig)
+        sig = mapID .. ":" .. table.concat(sig, ",")
+        if sig == lastMelloHeat or not (M and M.AddPin) then return end
+        lastMelloHeat = sig
+        M:ClearPins("FriendMap_heat")
+        for zoneID, n in pairs(counts) do
+            local minX, maxX, minY, maxY = C_Map.GetMapRectOnMap(zoneID, mapID)
+            if minX then
+                local heat = math.min(1, (n - 1) / 4)
+                local zinfo = C_Map.GetMapInfo(zoneID)
+                M:AddPin("FriendMap_heat", zoneID, mapID, (minX + maxX) / 2, (minY + maxY) / 2, {
+                    icon = DISC, size = math.min(70, 26 + n * 8), alpha = 0.55,
+                    rgb = { 0.2 + 0.8 * heat, 0.9 - 0.7 * heat, 0.2 },
+                    tip = function() return ("%d friend%s in %s"):format(n, n > 1 and "s" or "", zinfo and zinfo.name or "?"), names[zoneID] end,
+                    show = "continent",
+                })
+            end
+        end
+        return
     end
 
     local i = 0
@@ -590,6 +642,7 @@ local function RedrawMapExtras()
     FM:DrawTrails()
     FM:DrawHeatmap()
 end
+FM.RedrawMapExtras = RedrawMapExtras
 WorldMapFrame:HookScript("OnShow", RedrawMapExtras)
 if WorldMapFrame.OnMapChanged then hooksecurefunc(WorldMapFrame, "OnMapChanged", RedrawMapExtras) end
 
@@ -620,6 +673,6 @@ function FM:OnTick()
     CheckAutoHelp()
     CheckKills()
     ticks = ticks + 1
-    if ticks % 2 == 0 and WorldMapFrame:IsShown() then RedrawMapExtras() end
+    if ticks % 2 == 0 and FM:IsAnyMapShown() then RedrawMapExtras() end
     if self.trackName and not FindMemberByName(self.trackName) and not self.rally then arrow:Hide() end
 end

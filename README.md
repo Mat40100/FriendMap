@@ -35,6 +35,16 @@ A World of Warcraft addon (WoW Forever client) that shows your friends on the wo
 
 To update, replace the folder with the new version (your groups are kept, they're stored in `WTF/`).
 
+## Map menu
+
+Whenever a map is open — Blizzard's world map, **MelloUI's map**, or another map addon — a small FriendMap button appears at its top-right corner (Shift+drag to move it). Its menu lets you:
+
+- **Ping / Rally at my map pin**: Ctrl+click any spot on the map to place the game's standard map pin, then pick one of these. Works on every map that uses the game's map pin (Blizzard, MelloUI, ...).
+- Ping / rally at your own position, clear the rally point, call for help.
+- Toggle trails, zone heatmap, minimap icons; stop the arrow; open the FriendMap window.
+
+On Blizzard's map you can also Alt+click (ping) and Alt+Shift+click (rally) directly.
+
 ## Getting started
 
 1. Type `/fm` to open the window.

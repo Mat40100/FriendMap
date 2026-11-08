@@ -35,6 +35,16 @@ Un addon World of Warcraft (client WoW Forever) qui affiche vos amis sur la cart
 
 Pour mettre à jour, remplacez le dossier par la nouvelle version (vos groupes sont conservés, ils sont enregistrés dans `WTF/`).
 
+## Menu de la carte
+
+Dès qu'une carte est ouverte — carte du monde de Blizzard, **carte de MelloUI** ou un autre addon de carte — un petit bouton FriendMap apparaît en haut à droite (Maj+glisser pour le déplacer). Son menu permet de :
+
+- **Ping / Rally at my map pin** : Ctrl+clic n'importe où sur la carte pour poser le repère standard du jeu, puis choisissez une de ces options. Fonctionne sur toutes les cartes qui utilisent le repère du jeu (Blizzard, MelloUI…).
+- Ping / ralliement à votre position, retirer le point de ralliement, appeler à l'aide.
+- Activer/désactiver les traces, la carte de chaleur, les icônes de la minicarte ; arrêter la flèche ; ouvrir la fenêtre FriendMap.
+
+Sur la carte de Blizzard, vous pouvez aussi faire Alt+clic (ping) et Alt+Maj+clic (ralliement) directement.
+
 ## Premiers pas
 
 1. Tapez `/fm` pour ouvrir la fenêtre.
