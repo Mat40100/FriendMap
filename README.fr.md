@@ -13,7 +13,7 @@ Un addon World of Warcraft (client WoW Forever) qui affiche vos amis sur la cart
 - **Pings sur la carte** : Alt+clic sur la carte du monde pour faire apparaître un marqueur pulsant chez tous vos amis (avec un son).
 - **À l'aide !** : un bouton (ou automatiquement sous 30 % de vie en combat JcJ) alerte votre groupe, montre où vous êtes et oriente leur flèche vers vous.
 - **Traces** : de petits points montrent le trajet de chaque ami sur les 3 dernières minutes.
-- **Distance et flèche** : les infobulles indiquent « 340 m NE » ; cliquez sur un ami sur la carte pour afficher une flèche qui pointe vers lui.
+- **Distance et flèche** : les infobulles indiquent « 340 yd NE » (en mètres environ ×0,9) ; cliquez sur un ami sur la carte pour afficher une flèche qui pointe vers lui.
 - **Statut** : un court statut (« farm », « cherche groupe »…) affiché sous votre nom sur la carte.
 - **Fil des victimes et classement** : votre groupe voit vos victimes en JcJ sauvage ; classement hebdomadaire dans la fenêtre et avec `/fm top`.
 - **Niveaux et hauts faits** : annoncés au groupe, avec un halo doré sur l'icône.
