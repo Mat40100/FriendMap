@@ -127,6 +127,7 @@ function FM:LeaveGroup(g)
         self:RemoveMember(g.code, sender)
     end
     self.members[g.code] = nil
+    if FriendMapDB.roster then FriendMapDB.roster[g.code] = nil end
     self:Print(("Left group |cffffd100%s|r."):format(g.name))
     self:RefreshUI()
 end
@@ -308,6 +309,7 @@ function FM:OnAddonMessage(text, distribution, sender)
         m.status = (parts[8] and parts[8] ~= code and parts[8] ~= "") and parts[8] or nil
         if self.OnMemberMoved then self:OnMemberMoved(m) end
         self.members[code][sender] = m
+        if self.RecordMember then self:RecordMember(code, m) end
         if isNew then
             -- greet newcomers so they see us right away
             self:BroadcastPosition(true)

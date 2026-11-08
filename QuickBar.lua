@@ -43,6 +43,8 @@ FM.BarActions = {
       active = function() return FriendMapDB.pvpAnnounce end },
     { key = "top", label = "PvP leaderboard", icon = "Interface\\Icons\\INV_Misc_Bone_HumanSkull_01",
       tip = "Show this week's world PvP kills", func = function() FM.SlashExtra.top() end },
+    { key = "members", label = "Group members", icon = "Interface\\Icons\\INV_Misc_GroupNeedMore",
+      tip = "Every player seen in your groups", func = function() FM:ToggleMembers() end },
     { key = "window", label = "Settings", icon = "Interface\\Icons\\INV_Misc_Gear_01",
       tip = "Open the FriendMap window (groups, options)", func = function() FM:ToggleUI() end },
 }

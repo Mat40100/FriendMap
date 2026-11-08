@@ -89,6 +89,7 @@ Choose which icons it shows with the **Quick bar** button in `/fm`, `/fm bar`, o
 | `/fm track <name>` | Arrow towards a friend (no name = stop) |
 | `/fm rally` / `/fm rally clear` | Set / clear the rally point at your position |
 | `/fm top` | Open the weekly world PvP leaderboard |
+| `/fm members` | Show every player seen in each of your groups (online / last seen) |
 | `/fm trails` / `/fm heatmap` | Turn trails / zone heatmap on/off |
 
 `[group]` can be the group's number from `/fm list`, or its name. Without it, the first group is used.

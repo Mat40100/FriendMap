@@ -89,6 +89,7 @@ Choisissez les icônes affichées avec le bouton **Quick bar** dans `/fm`, avec 
 | `/fm track <nom>` | Flèche vers un ami (sans nom = arrêter) |
 | `/fm rally` / `/fm rally clear` | Poser / retirer le point de ralliement à votre position |
 | `/fm top` | Ouvrir le classement hebdomadaire JcJ sauvage |
+| `/fm members` | Afficher tous les joueurs vus dans chacun de vos groupes (en ligne / vu il y a) |
 | `/fm trails` / `/fm heatmap` | Activer/désactiver les traces / la carte de chaleur |
 
 `[groupe]` peut être le numéro du groupe dans `/fm list`, ou son nom. Sans lui, le premier groupe est utilisé.
