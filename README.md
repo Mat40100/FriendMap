@@ -65,7 +65,6 @@ Choose which icons it shows with the **Quick bar** button in `/fm`, `/fm bar`, o
    - **Code**: shows a `FMAP:...` code to copy (Ctrl+C) and send anywhere. Friends join with **Join with code** or `/fm join FMAP:...`.
 4. Open the world map — your friends appear on it.
 
-> After logging in, the group shows *(connecting...)* until your first click in the game world: the client only lets addons join channels during a real player action.
 
 ## Commands
 

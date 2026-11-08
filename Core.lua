@@ -153,10 +153,6 @@ function FM:JoinChannel(g)
     local ch = self:ChannelName(g.code)
     if GetChannelName(ch) > 0 then return true end
     if not self.worldReady or not DefaultChannelsReady() then return false end
-    if not self.inHardwareEvent then
-        self.needJoin = true   -- will join on the next click
-        return false
-    end
     FM.lastStep = "JoinTemporaryChannel"
     if not pcall(JoinTemporaryChannel, ch, g.password) then return false end
     FM.lastStep = "HideChannelFromChat"
@@ -194,7 +190,10 @@ function FM:SendToGroup(g, msg)
     local id = GetChannelName(self:ChannelName(g.code))
     if id and id > 0 then
         FM.lastStep = "SendAddonMessage CHANNEL " .. msg:sub(1, 3)
-        C_ChatInfo.SendAddonMessage(self.PREFIX, msg .. "|" .. g.code, "CHANNEL", id)
+        local ok, result = pcall(C_ChatInfo.SendAddonMessage, self.PREFIX, msg .. "|" .. g.code, "CHANNEL", id)
+        self.stats = self.stats or { sent = 0, recv = 0, recvOther = 0 }
+        self.stats.sent = self.stats.sent + 1
+        self.stats.lastSend = { ok = ok, result = result, cmd = msg:sub(1, 4), at = GetTime() }
     end
 end
 
@@ -433,7 +432,12 @@ ev:SetScript("OnEvent", function(_, event, ...)
         end
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, text, distribution, sender = ...
-        if prefix == FM.PREFIX then FM:OnAddonMessage(text, distribution, sender) end
+        if prefix == FM.PREFIX then
+            FM.stats = FM.stats or { sent = 0, recv = 0, recvOther = 0 }
+            FM.stats.recv = FM.stats.recv + 1
+            FM.stats.lastRecv = { dist = distribution, sender = sender, text = tostring(text):sub(1, 40), at = GetTime() }
+            FM:OnAddonMessage(text, distribution, sender)
+        end
     elseif event == "ADDON_ACTION_FORBIDDEN" or event == "ADDON_ACTION_BLOCKED" then
         local who, func = ...
         if who == ADDON then

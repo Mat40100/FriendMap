@@ -65,7 +65,6 @@ Choisissez les icônes affichées avec le bouton **Quick bar** dans `/fm`, avec 
    - **Code** : affiche un code `FMAP:...` à copier (Ctrl+C) et à envoyer où vous voulez. Vos amis rejoignent avec **Join with code** ou `/fm join FMAP:...`.
 4. Ouvrez la carte du monde : vos amis y apparaissent.
 
-> Après la connexion, le groupe affiche *(connecting...)* jusqu'à votre premier clic dans le monde du jeu : le client n'autorise les addons à rejoindre un canal que pendant une vraie action du joueur.
 
 ## Commandes
 
