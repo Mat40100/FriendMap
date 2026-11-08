@@ -7,7 +7,7 @@ Un addon World of Warcraft (client WoW Forever) qui affiche vos amis sur la cart
 ## Fonctionnalités
 
 - **Vos amis sur la carte** : icône de classe + nom sur la carte du monde, icônes plus petites sur la minicarte. Survolez pour voir niveau/classe/groupe, clic droit pour chuchoter.
-- **Groupes** : créez-en autant que vous voulez. Chaque groupe utilise son propre canal d'addon caché et protégé par mot de passe ; rien n'apparaît dans votre chat.
+- **Groupes** : créez-en autant que vous voulez. Chaque groupe utilise son propre canal d'addon caché et protégé par mot de passe pour savoir qui est en ligne ; les données sont envoyées en messages d'addon invisibles à ces membres uniquement (WoW Forever bloque les messages d'addon dans les canaux personnalisés). Rien n'apparaît dans votre chat.
 - **Rejoindre facilement** : invitations en jeu (fenêtre Accepter/Refuser), liens cliquables dans le chat, ou un code de partage à coller n'importe où (Discord…).
 - **JcJ sauvage** : un halo rouge pulsant entoure l'icône d'un ami pendant un combat JcJ en extérieur et, si l'option est activée, vos groupes sont prévenus quand vous en commencez un.
 - **Pings sur la carte** : Alt+clic sur la carte du monde pour faire apparaître un marqueur pulsant chez tous vos amis (avec un son).

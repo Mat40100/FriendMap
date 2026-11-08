@@ -4,7 +4,7 @@
 ## Author: Mathieu
 ## IconTexture: Interface\AddOns\FriendMap\Media\Icon
 ## X-Curse-Project-ID: 1791378
-## Version: 1.4.0
+## Version: 1.5.0
 ## SavedVariables: FriendMapDB
 
 Libs\LibStub\LibStub.lua
@@ -12,6 +12,7 @@ Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\HereBeDragons\HereBeDragons-2.0.lua
 Libs\HereBeDragons\HereBeDragons-Pins-2.0.lua
 Core.lua
+Transport.lua
 Pins.lua
 Features.lua
 MapMenu.lua

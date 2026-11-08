@@ -28,7 +28,7 @@ FM.SlashExtra.debug = function()
     for i, g in ipairs(FriendMapDB.groups) do
         local ch = FM:ChannelName(g.code)
         local id, name = GetChannelName(ch)
-        P(("Group %d '%s': channel %s -> id %s %s, %d friend(s) seen"):format(i, g.name, ch, tostring(id), Y(id and id > 0), FM:CountMembers(g.code)))
+        P(("Group %d '%s': channel %s -> id %s %s, %d in channel, %d friend(s) seen"):format(i, g.name, ch, tostring(id), Y(id and id > 0), FM.PeerCount and FM:PeerCount(g.code) or 0, FM:CountMembers(g.code)))
     end
     if FM.needJoin then P("|cffffaa00Waiting for a click in the world to join channels.|r") end
     local st = FM.stats or {}
@@ -44,7 +44,13 @@ end
 
 -- /fm test : send a test message to every group (friends see it in chat)
 FM.SlashExtra.test = function()
-    for _, g in ipairs(FriendMapDB.groups) do FM:SendToGroup(g, "TEST|" .. UnitName("player")) end
+    local n = 0
+    for _, g in ipairs(FriendMapDB.groups) do
+        FM:SendToGroup(g, "TEST|" .. UnitName("player"))
+        n = n + (FM.PeerCount and FM:PeerCount(g.code) or 0)
+    end
+    if FM.AskAllLists then FM:AskAllLists() end
+    if n == 0 then FM:Print("|cffffaa00Nobody else found in your group channels yet (they must be online and on 1.5.0+).|r") end
     FM:Print("Test message sent. Your friends should see 'test received' in their chat.")
 end
 FM.Handlers.TEST = function(self, p, code, sender, short)

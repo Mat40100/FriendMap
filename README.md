@@ -7,7 +7,7 @@ A World of Warcraft addon (WoW Forever client) that shows your friends on the wo
 ## Features
 
 - **Friends on the map**: class icon + name on the world map, smaller icons on the minimap. Hover for level/class/group, right-click to whisper.
-- **Groups**: create as many as you like. Each group uses its own hidden, password-protected addon channel; nothing shows up in your chat.
+- **Groups**: create as many as you like. Each group uses its own hidden, password-protected addon channel to know who is online; data is sent as invisible addon messages to those members only (WoW Forever blocks addon messages inside custom channels). Nothing shows up in your chat.
 - **Easy joining**: in-game invites (Accept/Decline popup), clickable chat links, or a share code you can paste anywhere (Discord…).
 - **World PvP**: a pulsing red glow surrounds a friend's icon while they are in a world PvP fight, and (optionally) your groups get an alert when you start one.
 - **Map pings**: Alt+click the world map to drop a pulsing marker on all your friends' maps (with a sound).

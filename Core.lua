@@ -293,9 +293,11 @@ function FM:OnAddonMessage(text, distribution, sender)
         return
     end
 
-    if distribution ~= "CHANNEL" then return end
+    if distribution ~= "CHANNEL" and distribution ~= "WHISPER" then return end
     local code = parts[#parts]
     if not self:GetGroup(code) then return end
+    -- whoever messages us in a group is a peer we can answer
+    if self.AddPeer then self:AddPeer(code, sender) end
     self.members[code] = self.members[code] or {}
 
     if cmd == "P" then
