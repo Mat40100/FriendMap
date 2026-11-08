@@ -196,7 +196,7 @@ end)
 -- The button next to the open map
 ----------------------------------------------------------------------
 local btn = CreateFrame("Button", "FriendMapMapButton", UIParent)
-btn:SetSize(30, 30)
+btn:SetSize(26, 26)
 btn:SetFrameStrata("FULLSCREEN_DIALOG")
 btn:SetClampedToScreen(true)
 btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -207,7 +207,7 @@ btn.bg:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
 btn.bg:SetVertexColor(0, 0, 0, 0.75)
 btn.icon = btn:CreateTexture(nil, "ARTWORK")
 btn.icon:SetPoint("CENTER")
-btn.icon:SetSize(20, 20)
+btn.icon:SetSize(17, 17)
 btn.icon:SetTexture("Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon")
 btn.ring = btn:CreateTexture(nil, "OVERLAY")
 btn.ring:SetPoint("TOPLEFT", -6, 6)
@@ -235,21 +235,31 @@ btn:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
     local map, kind = FM:OpenMap()
     if not map then return end
-    local x = self:GetRight() - map:GetRight()
-    local y = self:GetTop() - map:GetTop()
-    FriendMapDB.mapButton = FriendMapDB.mapButton or {}
-    FriendMapDB.mapButton[kind] = { x, y }
+    local canvas = Canvas(map, kind)
+    local x = self:GetRight() - canvas:GetRight()
+    local y = self:GetTop() - canvas:GetTop()
+    FriendMapDB.mapButtonPos = FriendMapDB.mapButtonPos or {}
+    FriendMapDB.mapButtonPos[kind] = { x, y }
     self.placedFor = nil -- re-anchor to the map with the new offset
 end)
 
-local DEFAULT_OFFSET = { blizzard = { -40, -2 }, mello = { 0, 34 } }
+-- inside the top-right corner of the map picture (clear of the window's title bar buttons)
+local DEFAULT_OFFSET = { -8, -8 }
+
+local function Canvas(map, kind)
+    if kind == "blizzard" and WorldMapFrame.ScrollContainer and WorldMapFrame.ScrollContainer:IsShown() then
+        return WorldMapFrame.ScrollContainer
+    end
+    return map
+end
 
 local function Place(map, kind)
-    if btn.placedFor == map then return end
-    btn.placedFor = map
-    local o = (FriendMapDB.mapButton and FriendMapDB.mapButton[kind]) or DEFAULT_OFFSET[kind] or { 0, 34 }
+    local canvas = Canvas(map, kind)
+    if btn.placedFor == canvas then return end
+    btn.placedFor = canvas
+    local o = (FriendMapDB.mapButtonPos and FriendMapDB.mapButtonPos[kind]) or DEFAULT_OFFSET
     btn:ClearAllPoints()
-    btn:SetPoint("TOPRIGHT", map, "TOPRIGHT", o[1], o[2])
+    btn:SetPoint("TOPRIGHT", canvas, "TOPRIGHT", o[1], o[2])
 end
 
 -- cheap watcher: follow whichever map opens or closes
@@ -271,3 +281,9 @@ watcher:SetScript("OnUpdate", function(_, dt)
         wasShown = false
     end
 end)
+
+FM.SlashExtra.mapbutton = function()
+    FriendMapDB.mapButtonPos = nil
+    btn.placedFor = nil
+    FM:Print("Map button position reset.")
+end
