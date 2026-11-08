@@ -3,7 +3,7 @@
 ## Notes: Share your position with friend groups and see them on the world map and minimap.
 ## Author: Mathieu
 ## IconTexture: Interface\AddOns\FriendMap\Media\Icon
-## Version: 1.2.1
+## Version: 1.2.2
 ## SavedVariables: FriendMapDB
 
 Libs\LibStub\LibStub.lua

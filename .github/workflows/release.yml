@@ -1,0 +1,25 @@
+name: Release
+
+# Push a tag like v1.3.0 -> this builds FriendMap-<version>.zip and publishes
+# the GitHub Release (and the CurseForge file once CF_API_KEY is set).
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
