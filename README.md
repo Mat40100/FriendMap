@@ -22,12 +22,12 @@ A World of Warcraft addon (WoW Forever client) that shows your friends on the wo
 
 ## Installation
 
-1. Download the addon: on this page click **Code → Download ZIP** (or `git clone https://github.com/Mat40100/FriendMap.git`).
+1. Download the latest release: **[FriendMap on the Releases page](https://github.com/Mat40100/FriendMap/releases/latest)** → `FriendMap-vX.Y.Z-forever.zip`.
 2. Extract it into your AddOns folder:
    ```
    World of Warcraft/_forever_/Interface/AddOns/
    ```
-3. **Rename the folder to `FriendMap`** (the ZIP extracts as `FriendMap-main`). You should end up with:
+3. Check the folder is named `FriendMap` (it already is in the release ZIP; a "Code → Download ZIP" of the repo extracts as `FriendMap-main` and must be renamed). You should end up with:
    ```
    Interface/AddOns/FriendMap/FriendMap.toc
    ```

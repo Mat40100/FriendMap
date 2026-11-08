@@ -22,12 +22,12 @@ Un addon World of Warcraft (client WoW Forever) qui affiche vos amis sur la cart
 
 ## Installation
 
-1. Téléchargez l'addon : sur cette page, cliquez sur **Code → Download ZIP** (ou `git clone https://github.com/Mat40100/FriendMap.git`).
+1. Téléchargez la dernière version : **[FriendMap sur la page Releases](https://github.com/Mat40100/FriendMap/releases/latest)** → `FriendMap-vX.Y.Z-forever.zip`.
 2. Extrayez-le dans votre dossier AddOns :
    ```
    World of Warcraft/_forever_/Interface/AddOns/
    ```
-3. **Renommez le dossier en `FriendMap`** (le ZIP s'extrait sous le nom `FriendMap-main`). Vous devez obtenir :
+3. Vérifiez que le dossier s'appelle `FriendMap` (c'est déjà le cas dans le ZIP de la release ; un « Code → Download ZIP » du dépôt s'extrait en `FriendMap-main` et doit être renommé). Vous devez obtenir :
    ```
    Interface/AddOns/FriendMap/FriendMap.toc
    ```

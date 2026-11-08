@@ -4,7 +4,7 @@
 local FM = FriendMap
 local ADDON = ...
 
-FM.DOWNLOAD_URL = "https://github.com/Mat40100/FriendMap"
+FM.DOWNLOAD_URL = "https://github.com/Mat40100/FriendMap/releases/latest"
 
 local GetMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
 FM.VERSION = (GetMeta and GetMeta(ADDON, "Version")) or "0"
