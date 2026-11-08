@@ -1,5 +1,8 @@
 # FriendMap changelog
 
+## 1.6.1
+- New option **Arrow to the rally point** in the `/fm` window (or `/fm rally off` / `/fm rally on`): turn it off to hide the on-screen arrow towards rally points. The rally flag still shows on the map.
+
 ## 1.6.0
 - **OpenMap support:** with OpenMap installed, friends show on the world map as a light circle in their class colour (with their name) instead of the class icon. The red PvP / gold glow still shows around it.
 - You are never drawn as a friend on your own map.

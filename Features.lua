@@ -362,7 +362,7 @@ end
 local function ArrowTarget()
     local m = FindMemberByName(FM.trackName)
     if m then return m.inst, m.x, m.y, m.name end
-    if FM.rally then return FM.rally.inst, FM.rally.x, FM.rally.y, "Rally point" end
+    if FM.rally and not FriendMapDB.rallyArrowOff then return FM.rally.inst, FM.rally.x, FM.rally.y, "Rally point" end
 end
 
 local elapsed = 0
@@ -691,6 +691,14 @@ function FM:ClearRally()
     self:Print("Rally point cleared.")
 end
 
+-- Option: arrow towards the rally point (the flag on the map always shows)
+function FM:SetRallyArrow(on)
+    FriendMapDB.rallyArrowOff = not on
+    self:UpdateArrow()
+    self:Print("Arrow to the rally point: " .. (on and "|cff00ff00ON|r" or "|cffff0000OFF|r"))
+    self:RefreshUI()
+end
+
 FM.Handlers.RALLY = function(self, p, code, sender, short)
     if p[2] == "clear" then
         if self.rally then self:ApplyRally(nil); self:Print(short .. " cleared the rally point.") end
@@ -699,12 +707,14 @@ FM.Handlers.RALLY = function(self, p, code, sender, short)
     local inst, x, y = tonumber(p[2]), tonumber(p[3]), tonumber(p[4])
     if not (inst and x and y) then return end
     self:ApplyRally(inst, x, y, short)
-    self:Print(("|cff3399ff%s set a rally point|r (%s). Follow the arrow!"):format(short, self:DistanceText(inst, x, y)))
+    self:Print(("|cff3399ff%s set a rally point|r (%s).%s"):format(short, self:DistanceText(inst, x, y),
+        FriendMapDB.rallyArrowOff and "" or " Follow the arrow!"))
     Sound(SOUNDKIT and SOUNDKIT.READY_CHECK, 8960)
 end
 
 FM.SlashExtra.rally = function(rest)
     if rest == "clear" then FM:ClearRally() return end
+    if rest == "off" or rest == "on" then FM:SetRallyArrow(rest == "on") return end
     local x, y, inst = HBD:GetPlayerWorldPosition()
     if x then FM:SetRally(inst, x, y) end
 end
@@ -860,5 +870,6 @@ function FM:OnTick()
     CheckKills()
     ticks = ticks + 1
     if ticks % 2 == 0 and FM:IsAnyMapShown() then RedrawMapExtras() end
-    if self.trackName and not FindMemberByName(self.trackName) and not self.rally then arrow:Hide() end
+    if not ArrowTarget() then arrow:Hide() end
 end
+

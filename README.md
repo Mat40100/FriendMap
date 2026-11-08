@@ -88,6 +88,7 @@ Choose which icons it shows with the **Quick bar** button in `/fm`, `/fm bar`, o
 | `/fm status <text>` | Set your status (empty = clear) |
 | `/fm track <name>` | Arrow towards a friend (no name = stop) |
 | `/fm rally` / `/fm rally clear` | Set / clear the rally point at your position |
+| `/fm rally off` / `/fm rally on` | Hide / show the arrow to the rally point |
 | `/fm top` | Open the weekly world PvP leaderboard |
 | `/fm members` | Show every player seen in each of your groups (online / last seen) |
 | `/fm trails` / `/fm heatmap` | Turn trails / zone heatmap on/off |

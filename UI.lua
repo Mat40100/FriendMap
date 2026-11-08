@@ -145,6 +145,15 @@ local function Build()
     pvp:SetScript("OnClick", function(self) FriendMapDB.pvpAnnounce = self:GetChecked() and true or false end)
     frame.pvp = pvp
 
+    local rallyOn = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+    rallyOn:SetPoint("TOPLEFT", 12, -56)
+    rallyOn:SetSize(24, 24)
+    rallyOn.text = rallyOn.text or rallyOn.Text or rallyOn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    rallyOn.text:SetPoint("LEFT", rallyOn, "RIGHT", 2, 0)
+    rallyOn.text:SetText("Arrow to the rally point")
+    rallyOn:SetScript("OnClick", function(self) FM:SetRallyArrow(self:GetChecked() and true or false) end)
+    frame.rallyOn = rallyOn
+
     -- action bar: ping / help / rally / status
     local ping = Button(frame, "Ping here", 80)
     ping:SetPoint("TOPLEFT", 14, -86)
@@ -255,6 +264,7 @@ function FM:RefreshUI()
     if not frame or not frame:IsShown() then return end
     frame.share:SetChecked(FriendMapDB.sharing)
     frame.pvp:SetChecked(FriendMapDB.pvpAnnounce)
+    frame.rallyOn:SetChecked(not FriendMapDB.rallyArrowOff)
     local newer = FriendMapDB.newestVersion and FM.IsNewer and FM:IsNewer(FriendMapDB.newestVersion, FM.VERSION)
     frame.title:SetText("FriendMap " .. (FM.VERSION or "") .. (newer and ("  |cff00ff00(" .. FriendMapDB.newestVersion .. " available: /fm update)|r") or ""))
     if not frame.status:HasFocus() then frame.status:SetText(FriendMapDB.status or "") end
