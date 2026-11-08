@@ -178,7 +178,11 @@ function FM:ShowMapMenu(anchor)
     menu:SetSize(width + 16, -y + 8)
     menu.anchor = anchor
     menu:ClearAllPoints()
-    menu:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT", 0, -2)
+    if anchor.onRail then
+        menu:SetPoint("BOTTOMLEFT", anchor, "BOTTOMRIGHT", 6, 0)   -- opens beside the rail, upwards
+    else
+        menu:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT", 0, -2)
+    end
     menu:Show()
 end
 
@@ -246,6 +250,19 @@ end)
 -- inside the top-right corner of the map picture (clear of the window's title bar buttons)
 local DEFAULT_OFFSET = { -8, -8 }
 
+-- MelloUI's map has a narrow rail of round buttons between the map and the quest
+-- column (46 px wide, as tall as the map). We sit at its bottom, under its own buttons.
+local function MelloRail(map)
+    local best
+    for _, child in ipairs({ map:GetChildren() }) do
+        local w, h = child:GetWidth(), child:GetHeight()
+        if child:IsShown() and w and h and w > 30 and w < 70 and h > 200 and (not best or h > best:GetHeight()) then
+            best = child
+        end
+    end
+    return best
+end
+
 local function Canvas(map, kind)
     if kind == "blizzard" and WorldMapFrame.ScrollContainer and WorldMapFrame.ScrollContainer:IsShown() then
         return WorldMapFrame.ScrollContainer
@@ -254,12 +271,24 @@ local function Canvas(map, kind)
 end
 
 local function Place(map, kind)
-    local canvas = Canvas(map, kind)
-    if btn.placedFor == canvas then return end
-    btn.placedFor = canvas
-    local o = (FriendMapDB.mapButtonPos and FriendMapDB.mapButtonPos[kind]) or DEFAULT_OFFSET
+    local saved = FriendMapDB.mapButtonPos and FriendMapDB.mapButtonPos[kind]
+    local rail = kind == "mello" and not saved and MelloRail(map)
+    local target = rail or Canvas(map, kind)
+    if btn.placedFor == target then return end
+    btn.placedFor = target
     btn:ClearAllPoints()
-    btn:SetPoint("TOPRIGHT", canvas, "TOPRIGHT", o[1], o[2])
+    if rail then
+        btn:SetSize(30, 30)                     -- same size as MelloUI's rail buttons
+        btn:SetPoint("BOTTOM", rail, "BOTTOM", 0, 10)
+        btn.ring:Hide()
+        btn.onRail = true
+    else
+        btn.ring:Show()
+        btn.onRail = false
+        btn:SetSize(26, 26)
+        local o = saved or DEFAULT_OFFSET
+        btn:SetPoint("TOPRIGHT", target, "TOPRIGHT", o[1], o[2])
+    end
 end
 
 -- cheap watcher: follow whichever map opens or closes
