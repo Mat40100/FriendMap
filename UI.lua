@@ -78,13 +78,19 @@ end
 ----------------------------------------------------------------------
 -- Main window
 ----------------------------------------------------------------------
-local function MemberNames(code)
+local function Colored(name, class)
+    local c = RAID_CLASS_COLORS[class or ""]
+    return c and ("|c%s%s|r"):format(c.colorStr or "ffffffff", name) or name
+end
+
+local function MemberNames(g)
     local t = {}
-    for _, m in pairs(FM.members[code] or {}) do
-        local c = RAID_CLASS_COLORS[m.class or ""]
-        t[#t + 1] = c and ("|c%s%s|r"):format(c.colorStr or "ffffffff", m.name) or m.name
-    end
+    for _, m in pairs(FM.members[g.code] or {}) do t[#t + 1] = Colored(m.name, m.class) end
     table.sort(t)
+    -- yourself first, when connected
+    if FM:IsConnected(g) then
+        table.insert(t, 1, Colored(UnitName("player") .. " (you)", select(2, UnitClass("player"))))
+    end
     return #t > 0 and table.concat(t, ", ") or "|cff888888nobody online|r"
 end
 
@@ -255,8 +261,8 @@ function FM:RefreshUI()
         r.group = g
         if g then
             local status = self:IsConnected(g) and "" or " |cffff5555(connecting...)|r"
-            r.name:SetText(("%s |cff888888(%d)|r%s"):format(g.name, self:CountMembers(g.code), status))
-            r.members:SetText(MemberNames(g.code))
+            r.name:SetText(("%s |cff888888(%d online)|r%s"):format(g.name, self:OnlineCount(g), status))
+            r.members:SetText(MemberNames(g))
             r:Show()
         else
             r:Hide()

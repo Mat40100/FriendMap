@@ -348,6 +348,11 @@ function FM:ExpireMembers()
     end
 end
 
+-- online count including yourself (when connected to that group's channel)
+function FM:OnlineCount(g)
+    return self:CountMembers(g.code) + (self:IsConnected(g) and 1 or 0)
+end
+
 function FM:CountMembers(code)
     local n = 0
     for _ in pairs(self.members[code] or {}) do n = n + 1 end
@@ -520,7 +525,7 @@ function FM:Slash(msg)
         FM.SlashExtra[cmd](rest)
     elseif cmd == "list" then
         for i, g in ipairs(FriendMapDB.groups) do
-            FM:Print(("%d. %s (%d online) %s"):format(i, g.name, FM:CountMembers(g.code),
+            FM:Print(("%d. %s (%d online) %s"):format(i, g.name, FM:OnlineCount(g),
                 FM:IsConnected(g) and "" or "|cffff5555[not connected]|r"))
         end
     else
