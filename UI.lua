@@ -168,6 +168,14 @@ local function Build()
     stl:SetText("My status (Enter to save)")
     frame.status = st
 
+    local qb = Button(frame, "Quick bar", 80)
+    qb:SetPoint("TOPRIGHT", -14, -32)
+    qb:SetScript("OnClick", function() FM:ToggleBarConfig() end)
+    qb:SetScript("OnEnter", function(b)
+        GameTooltip:SetOwner(b, "ANCHOR_TOP"); GameTooltip:SetText("Choose the icons of your quick bar"); GameTooltip:Show()
+    end)
+    qb:SetScript("OnLeave", GameTooltip_Hide)
+
     frame.top = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     frame.top:SetPoint("TOPLEFT", 16, -116)
     frame.top:SetWidth(440)

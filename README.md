@@ -49,6 +49,12 @@ On Blizzard's map you can also Alt+click (ping) and Alt+Shift+click (rally) dire
 
 FriendMap tells you when a newer version exists: as soon as anyone in your groups runs a newer version, you get a chat message (and the window title shows it). Type `/fm update` to copy the download link, then reinstall as above. `/fm version` shows your version.
 
+## Quick bar
+
+A small movable bar of icons for one-click actions: **Help!**, ping your position, rally here, clear the rally point, track the nearest friend, stop the arrow, toggle position sharing, toggle PvP announcements, PvP leaderboard, open the window.
+
+Choose which icons it shows with the **Quick bar** button in `/fm`, `/fm bar`, or by right-clicking the bar. There you can also hide it, lock it, make it vertical and change the icon size. Drag the bar to move it.
+
 ## Getting started
 
 1. Type `/fm` to open the window.

@@ -13,5 +13,6 @@ Core.lua
 Pins.lua
 Features.lua
 MapMenu.lua
+QuickBar.lua
 Version.lua
 UI.lua

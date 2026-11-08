@@ -49,6 +49,12 @@ Sur la carte de Blizzard, vous pouvez aussi faire Alt+clic (ping) et Alt+Maj+cli
 
 FriendMap vous prévient quand une nouvelle version existe : dès qu'un membre de vos groupes utilise une version plus récente, vous recevez un message dans le chat (et le titre de la fenêtre l'indique). Tapez `/fm update` pour copier le lien de téléchargement, puis réinstallez comme ci-dessus. `/fm version` affiche votre version.
 
+## Barre rapide
+
+Une petite barre d'icônes déplaçable pour les actions en un clic : **À l'aide !**, ping à votre position, ralliement ici, retirer le point de ralliement, suivre l'ami le plus proche, arrêter la flèche, activer/désactiver le partage de position, activer/désactiver les annonces JcJ, classement JcJ, ouvrir la fenêtre.
+
+Choisissez les icônes affichées avec le bouton **Quick bar** dans `/fm`, avec `/fm bar`, ou par clic droit sur la barre. Vous pouvez aussi la masquer, la verrouiller, la mettre à la verticale et changer la taille des icônes. Glissez la barre pour la déplacer.
+
 ## Premiers pas
 
 1. Tapez `/fm` pour ouvrir la fenêtre.
