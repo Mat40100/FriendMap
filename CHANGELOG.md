@@ -1,5 +1,9 @@
 # FriendMap changelog
 
+## 1.6.0
+- **OpenMap support:** with OpenMap installed, friends show on the world map as a light circle in their class colour (with their name) instead of the class icon. The red PvP / gold glow still shows around it.
+- You are never drawn as a friend on your own map.
+
 ## 1.5.1
 - The Help! button always answers: how many friends received the call, or why it couldn't be sent (cooldown, no group, sharing off, inside an instance).
 

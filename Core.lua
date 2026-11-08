@@ -279,7 +279,7 @@ end
 
 function FM:OnAddonMessage(text, distribution, sender)
     local short = Ambiguate(sender, "none")
-    if short == playerName then return end
+    if short == UnitName("player") or Ambiguate(sender, "short") == UnitName("player") then return end
 
     local parts = { strsplit("|", text) }
     local cmd = parts[1]

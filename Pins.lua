@@ -78,13 +78,33 @@ local function CreatePin(isWorld)
     return f
 end
 
+-- OpenMap already draws your own position: there, friends are a light class-coloured circle
+local function OpenMapLoaded()
+    local f = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
+    return f and f("OpenMap") and true or false
+end
+
 local function Style(f, m, groupName)
     f.member, f.groupName = m, groupName
     local coords = CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[m.class or ""]
-    if coords then
+    local circle = f.label ~= nil and OpenMapLoaded()
+    if circle ~= f.isCircle then
+        f.isCircle = circle
+        local size = circle and 14 or 22
+        f:SetSize(size, size)
+        f.glow:SetSize(size * 1.9, size * 1.9)
+    end
+    if circle then
+        f.icon:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+        f.icon:SetTexCoord(0, 1, 0, 1)
+        local r, g, b = ClassColor(m.class)
+        f.icon:SetVertexColor(r, g, b, 0.75)
+    elseif coords then
+        f.icon:SetVertexColor(1, 1, 1, 1)
         f.icon:SetTexture(CLASS_ICONS)
         f.icon:SetTexCoord(unpack(coords))
     else
+        f.icon:SetVertexColor(1, 1, 1, 1)
         f.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         f.icon:SetTexCoord(0, 1, 0, 1)
     end
@@ -186,12 +206,16 @@ local function DrawMello(best)
 end
 
 function Pins:Refresh()
+    local me = UnitName("player")
     -- One pin per player, even if they're in several of our groups (keep freshest).
     local best = {}
     for code, list in pairs(FM.members) do
         local g = FM:GetGroup(code)
         for sender, m in pairs(list) do
-            if not best[sender] or best[sender].m.t < m.t then
+            -- never draw yourself (the game / other map addons already do)
+            if m.name == me or Ambiguate(sender, "short") == me then
+                -- skip
+            elseif not best[sender] or best[sender].m.t < m.t then
                 best[sender] = { m = m, group = g and g.name }
             end
         end
