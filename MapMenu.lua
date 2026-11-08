@@ -54,7 +54,20 @@ end
 ----------------------------------------------------------------------
 -- The game's map pin (works with every map addon using it)
 ----------------------------------------------------------------------
+-- MelloUI: with its Route (or Quest List) installed, Ctrl+click on its map sets
+-- Route's destination instead of the game's map pin; read it (read-only API).
+local function MelloDestination()
+    local R = _G.MelloUI and rawget(_G.MelloUI, "Route")
+    if not (R and type(R.CurrentRoute) == "function") then return end
+    local ok, _, dest = pcall(R.CurrentRoute, R)
+    if not ok or type(dest) ~= "table" or not (dest.mapID and dest.mx and dest.my) then return end
+    local x, y, inst = HBD:GetWorldCoordinatesFromZone(dest.mx, dest.my, dest.mapID)
+    if x and inst then return x, y, inst end
+end
+
 local function MapPinWorld()
+    local x, y, inst = MelloDestination()
+    if x then return x, y, inst end
     if not (C_Map.HasUserWaypoint and C_Map.HasUserWaypoint()) then return end
     local point = C_Map.GetUserWaypoint()
     if not point or not point.uiMapID or not point.position then return end
