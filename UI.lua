@@ -169,7 +169,7 @@ local function Build()
     frame.status = st
 
     local qb = Button(frame, "Quick bar", 80)
-    qb:SetPoint("TOPRIGHT", -14, -32)
+    qb:SetPoint("BOTTOMRIGHT", -12, 8)
     qb:SetScript("OnClick", function() FM:ToggleBarConfig() end)
     qb:SetScript("OnEnter", function(b)
         GameTooltip:SetOwner(b, "ANCHOR_TOP"); GameTooltip:SetText("Choose the icons of your quick bar"); GameTooltip:Show()
@@ -182,7 +182,7 @@ local function Build()
     frame.top:SetJustifyH("LEFT")
 
     local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    hint:SetPoint("BOTTOM", 0, 10)
+    hint:SetPoint("BOTTOMLEFT", 16, 13)
     hint:SetText("Map: Alt+click = ping, Alt+Shift+click = rally, click a friend = arrow")
 
     frame.empty = frame:CreateFontString(nil, "OVERLAY", "GameFontDisable")
