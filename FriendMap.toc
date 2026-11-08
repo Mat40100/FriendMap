@@ -2,7 +2,7 @@
 ## Title: FriendMap
 ## Notes: Share your position with friend groups and see them on the world map and minimap.
 ## Author: Mathieu
-## Version: 1.1.0
+## Version: 1.2.0
 ## SavedVariables: FriendMapDB
 
 Libs\LibStub\LibStub.lua
