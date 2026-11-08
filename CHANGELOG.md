@@ -1,5 +1,8 @@
 # FriendMap changelog
 
+## 1.5.1
+- The Help! button always answers: how many friends received the call, or why it couldn't be sent (cooldown, no group, sharing off, inside an instance).
+
 ## 1.5.0
 - **Fix: friends now see each other on WoW Forever.** The game silently drops addon messages sent in custom channels, so nothing was getting through. The hidden group channel is now used only to know who is online, and data is sent as invisible addon messages to those members. Nothing shows up in your chat.
 - Positions are sent every 2 s while you move, every 15 s while standing still.

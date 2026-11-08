@@ -192,13 +192,28 @@ local lastHelp = -999
 
 function FM:SendHelp(auto)
     local now = GetTime()
-    if now - lastHelp < (auto and 60 or 5) then return end
+    local say = function(m) if not auto then self:Print(m) end end
+    local wait = (auto and 60 or 5) - (now - lastHelp)
+    if wait > 0 then say(("|cffffaa00Help call already sent, wait %d s.|r"):format(math.ceil(wait))) return end
+    if #FriendMapDB.groups == 0 then say("|cffffaa00You are not in any group: create or join one first (/fm).|r") return end
+    if not FriendMapDB.sharing then say("|cffffaa00Position sharing is OFF: turn it on to call for help (/fm share).|r") return end
     local x, y, inst = HBD:GetPlayerWorldPosition()
-    if not x then return end
+    if not x then say("|cffffaa00Can't call for help here: the game gives no position (dungeon, raid or battleground).|r") return end
     lastHelp = now
     local hp = math.floor(100 * UnitHealth("player") / math.max(1, UnitHealthMax("player")))
     Broadcast(("HELP|%d|%.1f|%.1f|%d"):format(inst, x, y, hp))
-    self:Print("|cffff3333Help call sent to your groups.|r")
+    local n, seen = 0, {}
+    for _, g in ipairs(FriendMapDB.groups) do
+        for k in pairs(FM.peers and FM.peers[g.code] or {}) do
+            if not seen[k] then seen[k] = true; n = n + 1 end
+        end
+    end
+    if n == 0 then
+        self:Print("|cffff3333Help call sent|r, but |cffffaa00no friend is online in your groups right now.|r")
+    else
+        self:Print(("|cffff3333Help call sent to %d friend%s.|r"):format(n, n > 1 and "s" or ""))
+    end
+    if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or 856) end
 end
 
 FM.Handlers.HELP = function(self, p, code, sender, short)
