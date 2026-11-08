@@ -1,5 +1,8 @@
 # FriendMap changelog
 
+## 1.6.2
+- Friends now show as a **light circle in their class colour** on every map (Blizzard, MelloUI, OpenMap) and on the minimap. Prefer the class icons? `/fm icons` or the map menu switches back.
+
 ## 1.6.1
 - New option **Arrow to the rally point** in the `/fm` window (or `/fm rally off` / `/fm rally on`): turn it off to hide the on-screen arrow towards rally points. The rally flag still shows on the map.
 

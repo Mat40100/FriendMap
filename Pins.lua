@@ -78,19 +78,17 @@ local function CreatePin(isWorld)
     return f
 end
 
--- OpenMap already draws your own position: there, friends are a light class-coloured circle
-local function OpenMapLoaded()
-    local f = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
-    return f and f("OpenMap") and true or false
-end
+-- Friends are a light class-coloured circle (default) or the class icon (/fm icons)
+local function UseCircle() return FriendMapDB.iconStyle ~= "class" end
+FM.UseCircleIcons = UseCircle
 
 local function Style(f, m, groupName)
     f.member, f.groupName = m, groupName
     local coords = CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[m.class or ""]
-    local circle = f.label ~= nil and OpenMapLoaded()
+    local circle = UseCircle()
     if circle ~= f.isCircle then
         f.isCircle = circle
-        local size = circle and 14 or 22
+        local size = f.label and (circle and 14 or 22) or (circle and 10 or 16)
         f:SetSize(size, size)
         f.glow:SetSize(size * 1.9, size * 1.9)
     end
@@ -195,9 +193,12 @@ local function DrawMello(best)
             })
         end
         local hasClass = m.class and RAID_CLASS_COLORS[m.class]
+        local circle = UseCircle()
+        local c = hasClass and RAID_CLASS_COLORS[m.class]
         MelloPlace(M, key, m.x, m.y, {
-            icon = MELLO_ICONS .. (hasClass and ("class_" .. m.class) or "map_dot"),
-            size = 16, show = "world",
+            icon = MELLO_ICONS .. ((not circle and hasClass) and ("class_" .. m.class) or "map_dot"),
+            size = circle and 12 or 16, show = "world",
+            rgb = circle and c and { c.r, c.g, c.b } or nil, alpha = circle and 0.8 or nil,
             tip = MelloTip(m, e.group),
             click = function() FM:Track(m.name) end,
         })
@@ -249,4 +250,11 @@ function Pins:Refresh()
             HBDP:AddMinimapIconWorld(Pins, mm, m.inst, m.x, m.y, true)
         end
     end
+end
+
+FM.SlashExtra = FM.SlashExtra or {}
+FM.SlashExtra.icons = function()
+    FriendMapDB.iconStyle = UseCircle() and "class" or "circle"
+    FM:Print("Friends on the map: " .. (UseCircle() and "class-coloured circles" or "class icons"))
+    Pins:Refresh()
 end
