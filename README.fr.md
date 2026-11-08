@@ -51,7 +51,7 @@ FriendMap vous prévient quand une nouvelle version existe : dès qu'un membre d
 
 ## Barre rapide
 
-Une petite barre d'icônes déplaçable pour les actions en un clic : **À l'aide !**, ping à votre position, ralliement ici, retirer le point de ralliement, suivre l'ami le plus proche, arrêter la flèche, activer/désactiver le partage de position, activer/désactiver les annonces JcJ, classement JcJ, ouvrir la fenêtre.
+Une petite barre d'icônes déplaçable pour les actions en un clic : **À l'aide !**, ping à votre position, ralliement ici, retirer le point de ralliement, suivre l'ami le plus proche, arrêter la flèche, activer/désactiver le partage de position, activer/désactiver les annonces JcJ, classement JcJ, réglages (engrenage). Par défaut elle affiche **À l'aide !**, **Ralliement ici**, le **classement JcJ** et les **Réglages**.
 
 Choisissez les icônes affichées avec le bouton **Quick bar** dans `/fm`, avec `/fm bar`, ou par clic droit sur la barre. Vous pouvez aussi la masquer, la verrouiller, la mettre à la verticale et changer la taille des icônes. Glissez la barre pour la déplacer.
 

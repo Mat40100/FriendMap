@@ -43,11 +43,11 @@ FM.BarActions = {
       active = function() return FriendMapDB.pvpAnnounce end },
     { key = "top", label = "PvP leaderboard", icon = "Interface\\Icons\\INV_Misc_Bone_HumanSkull_01",
       tip = "Show this week's world PvP kills", func = function() FM.SlashExtra.top() end },
-    { key = "window", label = "FriendMap window", icon = "Interface\\Icons\\INV_Misc_Map_01",
-      tip = "Open the FriendMap window", func = function() FM:ToggleUI() end },
+    { key = "window", label = "Settings", icon = "Interface\\Icons\\INV_Misc_Gear_01",
+      tip = "Open the FriendMap window (groups, options)", func = function() FM:ToggleUI() end },
 }
 
-local DEFAULT_ON = { help = true, ping = true, rally = true, nearest = true, window = true }
+local DEFAULT_ON = { help = true, rally = true, top = true, window = true }
 
 local function DB()
     FriendMapDB.bar = FriendMapDB.bar or {}
@@ -179,7 +179,7 @@ end
 
 local function BuildConfig()
     cfg = CreateFrame("Frame", "FriendMapBarConfig", UIParent, "BasicFrameTemplateWithInset")
-    cfg:SetSize(300, 140 + #FM.BarActions * 28)
+    cfg:SetSize(300, 164 + #FM.BarActions * 28)
     cfg:SetPoint("CENTER", 260, 0)
     cfg:SetFrameStrata("DIALOG")
     cfg:SetMovable(true)
@@ -240,6 +240,15 @@ local function BuildConfig()
     big:SetScript("OnClick", function() DB().size = math.min(56, DB().size + 4); FM:UpdateBar(); cfg.sizeText:SetText("Icon size: " .. DB().size) end)
     cfg.sizeText = cfg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     cfg.sizeText:SetPoint("LEFT", big, "RIGHT", 8, 0)
+
+    local defaults = CreateFrame("Button", nil, cfg, "UIPanelButtonTemplate")
+    defaults:SetSize(90, 20); defaults:SetText("Default icons")
+    defaults:SetPoint("TOPRIGHT", -14, y - 24)
+    defaults:SetScript("OnClick", function()
+        DB().buttons = {}
+        for k, v in pairs(DEFAULT_ON) do DB().buttons[k] = v end
+        FM:UpdateBar(); FM:RefreshBarConfig()
+    end)
 
     local reset = CreateFrame("Button", nil, cfg, "UIPanelButtonTemplate")
     reset:SetSize(90, 20); reset:SetText("Reset position")

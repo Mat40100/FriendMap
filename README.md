@@ -51,7 +51,7 @@ FriendMap tells you when a newer version exists: as soon as anyone in your group
 
 ## Quick bar
 
-A small movable bar of icons for one-click actions: **Help!**, ping your position, rally here, clear the rally point, track the nearest friend, stop the arrow, toggle position sharing, toggle PvP announcements, PvP leaderboard, open the window.
+A small movable bar of icons for one-click actions: **Help!**, ping your position, rally here, clear the rally point, track the nearest friend, stop the arrow, toggle position sharing, toggle PvP announcements, PvP leaderboard, settings (gear). By default it shows **Help!**, **Rally here**, the **PvP leaderboard** and **Settings**.
 
 Choose which icons it shows with the **Quick bar** button in `/fm`, `/fm bar`, or by right-clicking the bar. There you can also hide it, lock it, make it vertical and change the icon size. Drag the bar to move it.
 
