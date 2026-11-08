@@ -1,0 +1,218 @@
+-- Simple management window: /fm
+local FM = FriendMap
+local MAX_ROWS = 8
+local frame
+
+local function Button(parent, text, width)
+    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    b:SetSize(width or 70, 22)
+    b:SetText(text)
+    return b
+end
+
+----------------------------------------------------------------------
+-- Popups
+----------------------------------------------------------------------
+StaticPopupDialogs["FRIENDMAP_CREATE"] = {
+    text = "Name of the new FriendMap group:",
+    button1 = CREATE or "Create", button2 = CANCEL,
+    hasEditBox = true, maxLetters = 24,
+    OnAccept = function(self) local t = (self.editBox or self.EditBox):GetText(); FM:WithHardware(function() FM:CreateGroup(t) end) end,
+    EditBoxOnEnterPressed = function(self) local t = self:GetText(); FM:WithHardware(function() FM:CreateGroup(t) end); self:GetParent():Hide() end,
+    EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["FRIENDMAP_JOIN"] = {
+    text = "Paste a FriendMap share code (FMAP:...):",
+    button1 = JOIN or "Join", button2 = CANCEL,
+    hasEditBox = true, maxLetters = 80, editBoxWidth = 260,
+    OnAccept = function(self) local t = (self.editBox or self.EditBox):GetText(); FM:WithHardware(function() FM:JoinGroup(FM:ParseShareCode(t)) end) end,
+    EditBoxOnEnterPressed = function(self) local t = self:GetText(); FM:WithHardware(function() FM:JoinGroup(FM:ParseShareCode(t)) end); self:GetParent():Hide() end,
+    EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["FRIENDMAP_INVITE_NAME"] = {
+    text = "Invite which player to |cffffd100%s|r?",
+    button1 = INVITE or "Invite", button2 = CANCEL,
+    hasEditBox = true, maxLetters = 48,
+    OnAccept = function(self, g) FM:Invite(strtrim((self.editBox or self.EditBox):GetText()), g) end,
+    EditBoxOnEnterPressed = function(self, g) FM:Invite(strtrim(self:GetText()), g); self:GetParent():Hide() end,
+    EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+    OnShow = function(self)
+        local eb = self.editBox or self.EditBox
+        local target = UnitIsPlayer("target") and GetUnitName("target", true)
+        if target then eb:SetText(target); eb:HighlightText() end
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["FRIENDMAP_COPY"] = {
+    text = "Share code for |cffffd100%s|r\nCtrl+C to copy, then send it to your friends.\nThey join with /fm join <code>.",
+    button1 = OKAY,
+    hasEditBox = true, editBoxWidth = 300,
+    OnShow = function(self, code)
+        code = code or self.data
+        local eb = self.editBox or self.EditBox
+        eb:SetText(code); eb:HighlightText(); eb:SetFocus()
+        eb:SetScript("OnTextChanged", function(e) if e:GetText() ~= code then e:SetText(code); e:HighlightText() end end)
+    end,
+    OnHide = function(self) (self.editBox or self.EditBox):SetScript("OnTextChanged", nil) end,
+    EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+    EditBoxOnEnterPressed = function(self) self:GetParent():Hide() end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["FRIENDMAP_LEAVE"] = {
+    text = "Leave FriendMap group |cffffd100%s|r?",
+    button1 = YES, button2 = NO,
+    OnAccept = function(_, g) FM:LeaveGroup(g) end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+function FM:ShowCopyBox(g)
+    StaticPopup_Show("FRIENDMAP_COPY", g.name, nil, self:GetShareCode(g))
+end
+
+----------------------------------------------------------------------
+-- Main window
+----------------------------------------------------------------------
+local function MemberNames(code)
+    local t = {}
+    for _, m in pairs(FM.members[code] or {}) do
+        local c = RAID_CLASS_COLORS[m.class or ""]
+        t[#t + 1] = c and ("|c%s%s|r"):format(c.colorStr or "ffffffff", m.name) or m.name
+    end
+    table.sort(t)
+    return #t > 0 and table.concat(t, ", ") or "|cff888888nobody online|r"
+end
+
+local function Build()
+    frame = CreateFrame("Frame", "FriendMapFrame", UIParent, "BasicFrameTemplateWithInset")
+    frame:SetSize(470, 130 + MAX_ROWS * 44)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetFrameStrata("DIALOG")
+    frame:Hide()
+    tinsert(UISpecialFrames, "FriendMapFrame")
+
+    local title = frame.TitleText or frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    if not frame.TitleText then title:SetPoint("TOP", 0, -5) end
+    title:SetText("FriendMap")
+
+    local create = Button(frame, "Create group", 110)
+    create:SetPoint("TOPLEFT", 14, -32)
+    create:SetScript("OnClick", function() StaticPopup_Show("FRIENDMAP_CREATE") end)
+
+    local join = Button(frame, "Join with code", 110)
+    join:SetPoint("LEFT", create, "RIGHT", 6, 0)
+    join:SetScript("OnClick", function() StaticPopup_Show("FRIENDMAP_JOIN") end)
+
+    local share = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+    share:SetPoint("LEFT", join, "RIGHT", 12, 0)
+    share:SetSize(24, 24)
+    share.text = share.text or share.Text or share:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    share.text:SetPoint("LEFT", share, "RIGHT", 2, 0)
+    share.text:SetText("Share my position")
+    share:SetScript("OnClick", function(self)
+        FriendMapDB.sharing = self:GetChecked() and true or false
+        if not FriendMapDB.sharing then
+            for _, g in ipairs(FriendMapDB.groups) do FM:SendToGroup(g, "BYE") end
+        else
+            FM:BroadcastPosition(true)
+        end
+    end)
+    frame.share = share
+
+    local pvp = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+    pvp:SetPoint("TOPLEFT", share, "BOTTOMLEFT", 0, 4)
+    pvp:SetSize(24, 24)
+    pvp.text = pvp.text or pvp.Text or pvp:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    pvp.text:SetPoint("LEFT", pvp, "RIGHT", 2, 0)
+    pvp.text:SetText("Announce my PvP fights")
+    pvp:SetScript("OnClick", function(self) FriendMapDB.pvpAnnounce = self:GetChecked() and true or false end)
+    frame.pvp = pvp
+
+    frame.empty = frame:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+    frame.empty:SetPoint("TOP", 0, -110)
+    frame.empty:SetText("No groups yet. Create one or join with a code.")
+
+    frame.rows = {}
+    for i = 1, MAX_ROWS do
+        local r = CreateFrame("Frame", nil, frame)
+        r:SetSize(440, 40)
+        r:SetPoint("TOPLEFT", 14, -82 - (i - 1) * 44)
+        r.bg = r:CreateTexture(nil, "BACKGROUND")
+        r.bg:SetAllPoints()
+        r.bg:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.04 or 0.08)
+
+        r.name = r:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        r.name:SetPoint("TOPLEFT", 6, -4)
+        r.name:SetWidth(200)
+        r.name:SetJustifyH("LEFT")
+
+        r.members = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        r.members:SetPoint("TOPLEFT", r.name, "BOTTOMLEFT", 0, -3)
+        r.members:SetWidth(210)
+        r.members:SetJustifyH("LEFT")
+        r.members:SetWordWrap(false)
+
+        r.leave = Button(r, "Leave", 52)
+        r.leave:SetPoint("RIGHT", -4, 0)
+        r.leave:SetScript("OnClick", function() StaticPopup_Show("FRIENDMAP_LEAVE", r.group.name, nil, r.group) end)
+
+        r.invite = Button(r, "Invite", 52)
+        r.invite:SetPoint("RIGHT", r.leave, "LEFT", -2, 0)
+        r.invite:SetScript("OnClick", function() StaticPopup_Show("FRIENDMAP_INVITE_NAME", r.group.name, nil, r.group) end)
+
+        r.link = Button(r, "Link", 46)
+        r.link:SetPoint("RIGHT", r.invite, "LEFT", -2, 0)
+        r.link:SetScript("OnClick", function() FM:PostLinkToChat(r.group) end)
+        r.link:SetScript("OnEnter", function(b)
+            GameTooltip:SetOwner(b, "ANCHOR_TOP"); GameTooltip:SetText("Insert a clickable join link in chat"); GameTooltip:Show()
+        end)
+        r.link:SetScript("OnLeave", GameTooltip_Hide)
+
+        r.code = Button(r, "Code", 46)
+        r.code:SetPoint("RIGHT", r.link, "LEFT", -2, 0)
+        r.code:SetScript("OnClick", function() FM:ShowCopyBox(r.group) end)
+        r.code:SetScript("OnEnter", function(b)
+            GameTooltip:SetOwner(b, "ANCHOR_TOP"); GameTooltip:SetText("Show the share code to copy (Discord, etc.)"); GameTooltip:Show()
+        end)
+        r.code:SetScript("OnLeave", GameTooltip_Hide)
+
+        frame.rows[i] = r
+    end
+end
+
+function FM:RefreshUI()
+    if not frame or not frame:IsShown() then return end
+    frame.share:SetChecked(FriendMapDB.sharing)
+    frame.pvp:SetChecked(FriendMapDB.pvpAnnounce)
+    local groups = FriendMapDB.groups
+    frame.empty:SetShown(#groups == 0)
+    for i, r in ipairs(frame.rows) do
+        local g = groups[i]
+        r.group = g
+        if g then
+            local status = self:IsConnected(g) and "" or " |cffff5555(connecting...)|r"
+            r.name:SetText(("%s |cff888888(%d)|r%s"):format(g.name, self:CountMembers(g.code), status))
+            r.members:SetText(MemberNames(g.code))
+            r:Show()
+        else
+            r:Hide()
+        end
+    end
+end
+
+function FM:ToggleUI()
+    if not frame then Build() end
+    if FM.needJoin then FM.needJoin = false; FM:WithHardware(function() FM:EnsureChannels() end) end
+    frame:SetShown(not frame:IsShown())
+    self:RefreshUI()
+end
