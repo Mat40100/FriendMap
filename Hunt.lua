@@ -83,7 +83,7 @@ local function OnDeath()
     if not FM.IsWorldPvPArea() then return end
     local a = lastAttacker
     if not a or GetTime() - a.t > KILLER_WINDOW then return end
-    local me, zone = UnitName("player"), Clean(Zone())
+    local me, zone = FM:MyName(), Clean(Zone())
     AddRevenge(a.name, a.class, a.level, me, zone)
     FM:Print(("|cffcc66ffKilled by %s|r (level %s %s). Your friends are told - revenge is on!")
         :format(Colored(a.name, a.class), a.level and a.level > 0 and a.level or "??", ClassName(a.class)))

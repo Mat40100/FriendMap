@@ -34,7 +34,7 @@ end
 
 function FM:AddPeer(code, name)
     if not Readable(name) or name == "" then return end
-    if Key(name) == me:lower() then return end
+    if FM:IsMe(name) then return end
     local p = Peers(code)
     local k = Key(name)
     if p[k] then return end

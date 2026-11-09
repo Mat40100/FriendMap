@@ -271,7 +271,7 @@ function FM:RefreshLeaderboard()
 
     for i = 1, 3 do FillCard(frame.cards[i], all[i]) end
 
-    local me, myRank, mine = UnitName("player"), nil, nil
+    local me, myRank, mine = FM:MyName(), nil, nil
     for i, e in ipairs(all) do if e.name == me then myRank, mine = i, e end end
     if myRank then
         frame.me:SetText(("You are |cffffd100#%d|r with |cffffd100%d|r points (%d kill%s, %d assist%s)"):format(myRank, mine.n,

@@ -214,7 +214,7 @@ function Pins:Refresh()
         local g = FM:GetGroup(code)
         for sender, m in pairs(list) do
             -- never draw yourself (the game / other map addons already do)
-            if m.name == me or Ambiguate(sender, "short") == me then
+            if FM:IsMe(m.name) or FM:IsMe(sender) then
                 -- skip
             elseif not best[sender] or best[sender].m.t < m.t then
                 best[sender] = { m = m, group = g and g.name }

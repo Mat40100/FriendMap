@@ -20,6 +20,19 @@ local CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 ----------------------------------------------------------------------
 -- Utils
 ----------------------------------------------------------------------
+-- WoW Forever: UnitName gives "First Last", but the server (addon messages, whispers,
+-- channels) knows the character by its first name only. Use that one everywhere.
+function FM:MyName()
+    local n = UnitName("player") or ""
+    return n:match("^(%S+)") or n
+end
+
+function FM:IsMe(name)
+    if type(name) ~= "string" or name == "" then return false end
+    local s = Ambiguate(name, "short")
+    return s == UnitName("player") or s == self:MyName()
+end
+
 function FM:Print(...)
     print("|cff33ff99FriendMap|r:", ...)
 end
@@ -89,7 +102,7 @@ end
 -- Group management
 ----------------------------------------------------------------------
 function FM:CreateGroup(name)
-    local g = { name = Sanitize(name), code = RandomString(8), password = RandomString(6), owner = playerName }
+    local g = { name = Sanitize(name), code = RandomString(8), password = RandomString(6), owner = FM:MyName() }
     table.insert(FriendMapDB.groups, g)
     self:JoinChannel(g)
     self:Print(("Created group |cffffd100%s|r. Share code: |cffffffff%s|r"):format(g.name, self:GetShareCode(g)))
@@ -279,7 +292,7 @@ end
 
 function FM:OnAddonMessage(text, distribution, sender)
     local short = Ambiguate(sender, "none")
-    if short == UnitName("player") or Ambiguate(sender, "short") == UnitName("player") then return end
+    if self:IsMe(sender) then return end
 
     local parts = { strsplit("|", text) }
     local cmd = parts[1]

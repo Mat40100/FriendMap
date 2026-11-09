@@ -89,7 +89,7 @@ local function MemberNames(g)
     table.sort(t)
     -- yourself first, when connected
     if FM:IsConnected(g) then
-        table.insert(t, 1, Colored(UnitName("player") .. " (you)", select(2, UnitClass("player"))))
+        table.insert(t, 1, Colored(FM:MyName() .. " (you)", select(2, UnitClass("player"))))
     end
     return #t > 0 and table.concat(t, ", ") or "|cff888888nobody online|r"
 end

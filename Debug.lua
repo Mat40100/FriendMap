@@ -46,7 +46,7 @@ end
 FM.SlashExtra.test = function()
     local n = 0
     for _, g in ipairs(FriendMapDB.groups) do
-        FM:SendToGroup(g, "TEST|" .. UnitName("player"))
+        FM:SendToGroup(g, "TEST|" .. FM:MyName())
         n = n + (FM.PeerCount and FM:PeerCount(g.code) or 0)
     end
     if FM.AskAllLists then FM:AskAllLists() end

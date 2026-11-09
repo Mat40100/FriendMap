@@ -2,6 +2,7 @@
 
 ## 1.6.3
 - **Assists:** the PvP leaderboard now counts assists. A kill (the enemy was your target when it died) is worth **2 points**, an assist (you fought it, or it was fighting one of your friends, in the last 30 s) is worth **1 point**. The leaderboard ranks by points and shows kills and assists for everyone.
+- **Fix: you no longer appear twice** ("First" and "First Last") in group lists and on the leaderboard. FriendMap now always uses your character's first name, like the server does; your old "First Last" kills are merged into it.
 - **More kills detected:** deaths are checked the moment an enemy's health changes, so kills are no longer missed when the enemy's nameplate disappears right after it dies. Enemies fighting your friends now count too.
 
 ## 1.6.2

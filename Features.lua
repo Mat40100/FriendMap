@@ -147,7 +147,7 @@ function FM:SendPing(inst, x, y, text)
     if GetTime() - lastPing < 1 then return end
     lastPing = GetTime()
     text = Clean(text):sub(1, 40)
-    local me = UnitName("player")
+    local me = FM:MyName()
     self:ShowMarker("ping", inst, x, y, me .. (text ~= "" and (": " .. text) or " pinged here"), me)
     Broadcast(("PING|%d|%.1f|%.1f|%s"):format(inst, x, y, text))
     Sound(SOUNDKIT and SOUNDKIT.MAP_PING, 3175)
@@ -414,7 +414,7 @@ local engaged, credited = {}, {}
 local function WeekKey(t) return date("%Y-%W", t) end
 
 local function ClassOf(name)
-    if name == UnitName("player") then return select(2, UnitClass("player")) end
+    if FM:IsMe(name) then return select(2, UnitClass("player")) end
     for _, list in pairs(FM.members) do
         for _, m in pairs(list) do
             if m.name == name then return m.class end
@@ -435,6 +435,18 @@ local function Store()
     end
     k.events = k.events or {}
     k.classes = k.classes or {}
+    -- older versions stored your own kills under "First Last": merge them into your name
+    local full, me = UnitName("player"), FM:MyName()
+    if full and full ~= me then
+        for id, e in pairs(k.events) do
+            if e.killer == full then
+                k.events[id] = nil
+                e.killer = me
+                k.events[me .. "@" .. e.at .. "@" .. e.victim] = e
+            end
+        end
+        k.classes[full] = nil
+    end
     -- older versions kept counts + a short log: keep what the log has
     if k.log then
         for _, e in ipairs(k.log) do
@@ -640,7 +652,7 @@ local lastTarget = {}   -- [guid] = GetTime() we last had it as our target
 local function Credit(u, guid, kind)
     credited[guid] = GetTime()
     local victim = Clean(UnitName(u))
-    local me = UnitName("player")
+    local me = FM:MyName()
     local at, zone = time(), SafeField(ZoneName())
     AddEvent(me, victim, zone, at, select(2, UnitClass("player")), kind)
     Changed()
@@ -743,7 +755,7 @@ function FM:ApplyRally(inst, x, y, by)
 end
 
 function FM:SetRally(inst, x, y)
-    local me = UnitName("player")
+    local me = FM:MyName()
     self:ApplyRally(inst, x, y, me)
     Broadcast(("RALLY|%d|%.1f|%.1f"):format(inst, x, y))
     self:Print("Rally point set and shared with your groups.")

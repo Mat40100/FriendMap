@@ -10,7 +10,7 @@ local function Roster(code)
 end
 
 function FM:RecordMember(code, m)
-    if not m or not m.name then return end
+    if not m or not m.name or FM:IsMe(m.name) then return end
     local r = Roster(code)
     local e = r[m.name] or {}
     e.class, e.level, e.seen = m.class or e.class, m.level or e.level, time()
@@ -40,14 +40,14 @@ end
 -- Flatten into display lines: group headers followed by its players
 local function BuildLines()
     local lines = {}
-    local me, myClass = UnitName("player"), select(2, UnitClass("player"))
+    local me, myClass = FM:MyName(), select(2, UnitClass("player"))
     for _, g in ipairs(FriendMapDB.groups) do
         local list = {}
         if FM:IsConnected(g) then
             list[#list + 1] = { name = me, class = myClass, level = UnitLevel("player"), online = true, you = true }
         end
         for name, e in pairs(Roster(g.code)) do
-            if name ~= me then
+            if not FM:IsMe(name) then
                 local m = IsOnline(g.code, name)
                 list[#list + 1] = { name = name, class = e.class, level = m and m.level or e.level,
                                     online = m ~= nil, seen = e.seen, zone = m and m.status }
