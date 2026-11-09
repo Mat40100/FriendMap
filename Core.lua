@@ -34,6 +34,28 @@ function FM:IsMe(name)
     return not s:find(" ") and s == (full:match("^(%S+)") or full)
 end
 
+-- Everyone is named "First Last" in FriendMap. The server may give only "First" as a
+-- message's sender, so every message carries the full name too (P), and we remember
+-- first -> full to rename everything else (kills, roster, handlers...).
+function FM:FullName(name)
+    if type(name) ~= "string" or name == "" then return name end
+    name = Ambiguate(name, "none")
+    if name:find(" ") then return name end
+    if self:IsMe(name) then return self:MyName() end
+    local map = FriendMapDB and FriendMapDB.fullNames
+    return map and map[name] or name
+end
+
+function FM:LearnFullName(full)
+    if type(full) ~= "string" or not full:find(" ") then return end
+    local first = full:match("^(%S+)")
+    FriendMapDB.fullNames = FriendMapDB.fullNames or {}
+    if FriendMapDB.fullNames[first] ~= full then
+        FriendMapDB.fullNames[first] = full
+        if self.OnFullNameLearned then self:OnFullNameLearned(first, full) end
+    end
+end
+
 function FM:Print(...)
     print("|cff33ff99FriendMap|r:", ...)
 end
@@ -229,7 +251,8 @@ function FM:BroadcastPosition(force)
     local _, class = UnitClass("player")
     local pvpLeft = math.max(0, math.floor((self.pvpUntil or 0) - now))
     local status = (FriendMapDB.status or ""):gsub("[|:]", "")
-    local msg = ("P|%d|%.1f|%.1f|%s|%d|%d|%s"):format(inst, x, y, class or "WARRIOR", UnitLevel("player") or 0, pvpLeft, status)
+    local msg = ("P|%d|%.1f|%.1f|%s|%d|%d|%s|%s"):format(inst, x, y, class or "WARRIOR", UnitLevel("player") or 0, pvpLeft, status,
+        (self:MyName():gsub("|", "")))
     for _, g in ipairs(FriendMapDB.groups) do self:SendToGroup(g, msg) end
 end
 
@@ -292,11 +315,14 @@ function FM:RemoveMember(code, sender)
 end
 
 function FM:OnAddonMessage(text, distribution, sender)
-    local short = Ambiguate(sender, "none")
     if self:IsMe(sender) then return end
 
     local parts = { strsplit("|", text) }
     local cmd = parts[1]
+    -- P carries the sender's full name (field 9, before the group code)
+    if cmd == "P" and parts[9] and #parts >= 10 then self:LearnFullName(parts[9]) end
+    local short = self:FullName(sender)
+    if self:IsMe(short) then return end
 
     if distribution == "WHISPER" and cmd == "INV" then
         -- INV|code|password|name
@@ -319,7 +345,7 @@ function FM:OnAddonMessage(text, distribution, sender)
         if not (inst and x and y) then return end
         local m = self.members[code][sender] or {}
         local isNew = m.t == nil
-        m.name, m.inst, m.x, m.y, m.class, m.level, m.t = short, inst, x, y, parts[5], tonumber(parts[6]), GetTime()
+        m.name, m.sender, m.inst, m.x, m.y, m.class, m.level, m.t = short, Ambiguate(sender, "none"), inst, x, y, parts[5], tonumber(parts[6]), GetTime()
         local pvpLeft = tonumber(parts[7]) or 0
         m.pvpUntil = pvpLeft > 0 and (GetTime() + pvpLeft) or nil
         m.status = (parts[8] and parts[8] ~= code and parts[8] ~= "") and parts[8] or nil

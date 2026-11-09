@@ -13,7 +13,7 @@ function FM:RecordMember(code, m)
     if not m or not m.name or FM:IsMe(m.name) then return end
     local r = Roster(code)
     local e = r[m.name] or {}
-    e.class, e.level, e.seen = m.class or e.class, m.level or e.level, time()
+    e.class, e.level, e.seen, e.sender = m.class or e.class, m.level or e.level, time(), m.sender or e.sender
     r[m.name] = e
     if frame and frame:IsShown() then frame:Refresh() end
 end
@@ -46,10 +46,20 @@ local function BuildLines()
         if FM:IsConnected(g) then
             list[#list + 1] = { name = me, class = myClass, level = UnitLevel("player"), online = true, you = true }
         end
-        for name, e in pairs(Roster(g.code)) do
+        -- merge entries saved under a first name only into "First Last"
+        local r = Roster(g.code)
+        for name, e in pairs(r) do
+            local full = FM:FullName(name)
+            if full ~= name then
+                local f = r[full]
+                if not f or (e.seen or 0) > (f.seen or 0) then r[full] = e end
+                r[name] = nil
+            end
+        end
+        for name, e in pairs(r) do
             if not FM:IsMe(name) then
                 local m = IsOnline(g.code, name)
-                list[#list + 1] = { name = name, class = e.class, level = m and m.level or e.level,
+                list[#list + 1] = { name = name, sender = e.sender, class = e.class, level = m and m.level or e.level,
                                     online = m ~= nil, seen = e.seen, zone = m and m.status }
             end
         end
@@ -104,7 +114,7 @@ local function Build()
             local p = self.data
             if not p or p.header or p.you or not p.name then return end
             if btn == "RightButton" then
-                ChatFrame_OpenChat("/w " .. p.name .. " ")
+                ChatFrame_OpenChat("/w " .. (p.sender or p.name) .. " ")
             elseif p.online then
                 FM:Track(p.name)
             end

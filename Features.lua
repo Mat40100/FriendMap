@@ -435,18 +435,17 @@ local function Store()
     end
     k.events = k.events or {}
     k.classes = k.classes or {}
-    -- 1.6.3 stored your own kills under your first name only: merge them into "First Last"
-    local me = FM:MyName()
-    local full = me:match("^(%S+)")
-    if full and full ~= me then
-        for id, e in pairs(k.events) do
-            if e.killer == full then
-                k.events[id] = nil
-                e.killer = me
-                k.events[me .. "@" .. e.at .. "@" .. e.victim] = e
-            end
+    -- kills stored under a first name only (older versions): rename them "First Last"
+    for id, e in pairs(k.events) do
+        local full = FM:FullName(e.killer)
+        if full ~= e.killer then
+            k.events[id] = nil
+            k.classes[full] = k.classes[full] or k.classes[e.killer]
+            k.classes[e.killer] = nil
+            e.killer = full
+            local nid = full .. "@" .. e.at .. "@" .. e.victim
+            if not k.events[nid] or (k.events[nid].kind == "A" and not e.kind) then k.events[nid] = e end
         end
-        k.classes[full] = nil
     end
     -- older versions kept counts + a short log: keep what the log has
     if k.log then
@@ -472,7 +471,7 @@ local function AddEvent(killer, victim, zone, at, class, kind)
     at = tonumber(at)
     if not killer or not at or WeekKey(at) ~= WeekKey() then return false end
     local k = Store()
-    killer, victim, zone = SafeField(killer), SafeField(victim), SafeField(zone)
+    killer, victim, zone = SafeField(FM:FullName(killer)), SafeField(victim), SafeField(zone)
     local id = killer .. "@" .. at .. "@" .. victim
     if class and class ~= "" and class ~= "?" then k.classes[killer] = class end
     if k.events[id] then

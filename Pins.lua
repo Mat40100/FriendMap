@@ -70,7 +70,7 @@ local function CreatePin(isWorld)
     f:SetScript("OnMouseUp", function(self, button)
         if not self.member then return end
         if button == "RightButton" and ChatFrame_SendTell then
-            ChatFrame_SendTell(self.member.name)
+            ChatFrame_SendTell(self.member.sender or self.member.name)
         elseif button == "LeftButton" and FM.Track then
             FM:Track(self.member.name)
         end
