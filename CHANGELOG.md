@@ -1,5 +1,8 @@
 # FriendMap changelog
 
+## 1.6.4
+- **Fix: names with a surname.** FriendMap now uses your full name ("First Last") for yourself, like your friends see it, so you appear once in group lists and on the leaderboard. Kills that 1.6.3 stored under your first name only are merged back.
+
 ## 1.6.3
 - **Assists:** the PvP leaderboard now counts assists. A kill (the enemy was your target when it died) is worth **2 points**, an assist (you fought it, or it was fighting one of your friends, in the last 30 s) is worth **1 point**. The leaderboard ranks by points and shows kills and assists for everyone.
 - **Fix: you no longer appear twice** ("First" and "First Last") in group lists and on the leaderboard. FriendMap now always uses your character's first name, like the server does; your old "First Last" kills are merged into it.

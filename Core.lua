@@ -20,17 +20,18 @@ local CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 ----------------------------------------------------------------------
 -- Utils
 ----------------------------------------------------------------------
--- WoW Forever: UnitName gives "First Last", but the server (addon messages, whispers,
--- channels) knows the character by its first name only. Use that one everywhere.
+-- WoW Forever: characters have a first name and a surname. Use the full name
+-- ("First Last") for yourself everywhere; a bare "First" still counts as you.
 function FM:MyName()
-    local n = UnitName("player") or ""
-    return n:match("^(%S+)") or n
+    return UnitName("player") or ""
 end
 
 function FM:IsMe(name)
     if type(name) ~= "string" or name == "" then return false end
     local s = Ambiguate(name, "short")
-    return s == UnitName("player") or s == self:MyName()
+    local full = UnitName("player") or ""
+    if s == full then return true end
+    return not s:find(" ") and s == (full:match("^(%S+)") or full)
 end
 
 function FM:Print(...)

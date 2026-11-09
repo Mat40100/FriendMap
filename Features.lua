@@ -435,8 +435,9 @@ local function Store()
     end
     k.events = k.events or {}
     k.classes = k.classes or {}
-    -- older versions stored your own kills under "First Last": merge them into your name
-    local full, me = UnitName("player"), FM:MyName()
+    -- 1.6.3 stored your own kills under your first name only: merge them into "First Last"
+    local me = FM:MyName()
+    local full = me:match("^(%S+)")
     if full and full ~= me then
         for id, e in pairs(k.events) do
             if e.killer == full then
