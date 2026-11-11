@@ -151,12 +151,14 @@ ev:SetScript("OnEvent", function(_, event, ...)
         local changed
         for entry in text:gmatch("[^,]+") do
             local name = entry:gsub("^%s*[%*@%+]*", ""):gsub("%s+$", "")
+            FM:LearnMyName(name)
             if FM:AddPeer(g.code, name) then changed = true end
         end
         if changed then FM:RefreshUI() end
     elseif event == "CHAT_MSG_CHANNEL_JOIN" then
         local _, sender, _, _, _, _, _, _, chName = ...
         local g = GroupOfChannel(chName)
+        if g and Readable(sender) then FM:LearnMyName(sender) end
         if g and FM:AddPeer(g.code, sender) then FM:RefreshUI() end
     elseif event == "CHAT_MSG_CHANNEL_LEAVE" then
         local _, sender, _, _, _, _, _, _, chName = ...

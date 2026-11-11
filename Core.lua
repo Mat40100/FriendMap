@@ -22,16 +22,40 @@ local CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 ----------------------------------------------------------------------
 -- WoW Forever: characters have a first name and a surname. Use the full name
 -- ("First Last") for yourself everywhere; a bare "First" still counts as you.
+-- The game may give only "First" for yourself while the server (chat, channel lists,
+-- whispers) names you "First Last". The full form is learned from the channel list.
+local function MyFirst()
+    local n = UnitName("player") or ""
+    return n:match("^(%S+)") or n
+end
+
 function FM:MyName()
-    return UnitName("player") or ""
+    local n = UnitName("player") or ""
+    if n:find(" ") then return n end
+    local t = FriendMapDB and FriendMapDB.myFull
+    return t and t[n] or n
+end
+
+function FM:LearnMyName(name)
+    if type(name) ~= "string" then return end
+    name = Ambiguate(name, "none")
+    local n = UnitName("player") or ""
+    if n:find(" ") or not name:find(" ") or name:match("^(%S+)") ~= n then return end
+    FriendMapDB.myFull = FriendMapDB.myFull or {}
+    if FriendMapDB.myFull[n] ~= name then
+        FriendMapDB.myFull[n] = name
+        if self.OnFullNameLearned then self:OnFullNameLearned(n, name) end
+    end
 end
 
 function FM:IsMe(name)
     if type(name) ~= "string" or name == "" then return false end
-    local s = Ambiguate(name, "short")
-    local full = UnitName("player") or ""
-    if s == full then return true end
-    return not s:find(" ") and s == (full:match("^(%S+)") or full)
+    local s = Ambiguate(name, "none")
+    local me = self:MyName()
+    if s == me or s == (UnitName("player") or "") then return true end
+    if not s:find(" ") then return s == MyFirst() end
+    -- full name not learned yet: "Me Something" is me
+    return not me:find(" ") and s:match("^(%S+)") == me
 end
 
 -- Everyone is named "First Last" in FriendMap. The server may give only "First" as a

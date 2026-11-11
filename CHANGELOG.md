@@ -2,6 +2,7 @@
 
 ## 1.6.5
 - **Fix: the Help! button did nothing.** Reading your health could fail silently on this client, which stopped the call before it was sent. The help call now always goes out, and any error is shown in the chat.
+- **Fix: you still appeared twice** ("First" and "First Last"). The game gives only your first name for yourself, while the server uses your full name. FriendMap now learns your full name from the group channel and merges your old entries in the leaderboard and members window.
 
 ## 1.6.4
 - **Fix: names with a surname.** Everyone is now named "First Last" everywhere in FriendMap (map, group lists, members window, leaderboard, kill feed, alerts), so nobody appears twice anymore. Each player sends their full name with their position; entries saved under a first name only are merged automatically.
