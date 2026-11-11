@@ -345,6 +345,8 @@ function FM:OnAddonMessage(text, distribution, sender)
     local cmd = parts[1]
     -- P carries the sender's full name (field 9, before the group code)
     if cmd == "P" and parts[9] and #parts >= 10 then self:LearnFullName(parts[9]) end
+    -- the server names the sender "First Last": learn it whatever the message
+    self:LearnFullName(Ambiguate(sender, "none"))
     local short = self:FullName(sender)
     if self:IsMe(short) then return end
 
