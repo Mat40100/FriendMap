@@ -191,7 +191,15 @@ end
 ----------------------------------------------------------------------
 local lastHelp = -999
 
-function FM:SendHelp(auto)
+-- health in % (0 if the game hides it: secret values can't be used in math)
+local function HealthPct()
+    local ok, pct = pcall(function()
+        return math.floor(100 * UnitHealth("player") / math.max(1, UnitHealthMax("player")))
+    end)
+    return ok and tonumber(pct) or nil
+end
+
+local function DoSendHelp(self, auto)
     local now = GetTime()
     local say = function(m) if not auto then self:Print(m) end end
     local wait = (auto and 60 or 5) - (now - lastHelp)
@@ -201,7 +209,7 @@ function FM:SendHelp(auto)
     local x, y, inst = HBD:GetPlayerWorldPosition()
     if not x then say("|cffffaa00Can't call for help here: the game gives no position (dungeon, raid or battleground).|r") return end
     lastHelp = now
-    local hp = math.floor(100 * UnitHealth("player") / math.max(1, UnitHealthMax("player")))
+    local hp = HealthPct() or 0
     Broadcast(("HELP|%d|%.1f|%.1f|%d"):format(inst, x, y, hp))
     local n, seen = 0, {}
     for _, g in ipairs(FriendMapDB.groups) do
@@ -215,6 +223,11 @@ function FM:SendHelp(auto)
         self:Print(("|cffff3333Help call sent to %d friend%s.|r"):format(n, n > 1 and "s" or ""))
     end
     if PlaySound then PlaySound(SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or 856) end
+end
+
+function FM:SendHelp(auto)
+    local ok, err = pcall(DoSendHelp, self, auto)
+    if not ok and not auto then self:Print("|cffff3333Help call failed:|r " .. tostring(err)) end
 end
 
 FM.Handlers.HELP = function(self, p, code, sender, short)
@@ -238,8 +251,8 @@ end
 
 local function CheckAutoHelp()
     if not FriendMapDB.autoHelp or (FM.pvpUntil or 0) < GetTime() then return end
-    local max = UnitHealthMax("player")
-    if max > 0 and UnitHealth("player") / max < 0.3 and not UnitIsDeadOrGhost("player") then
+    local hp = HealthPct()
+    if hp and hp < 30 and not UnitIsDeadOrGhost("player") then
         FM:SendHelp(true)
     end
 end
