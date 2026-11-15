@@ -1,5 +1,11 @@
 # FriendMap changelog
 
+## 1.6.6
+- **New leaderboard look**: wider window, bigger podium, tabs, and a view switch between this week and running seasons.
+- **Kill history**: every kill with the victim's class and level, who made it, where and when. Click a player to see only their kills (`/fm kills [name]`).
+- **New points**: a kill is worth 5 if the victim was yellow or harder for you, 3 if green, 2 if grey. An assist is worth 1.
+- **PvP seasons per group**: a member proposes a season with an end date, and it starts once another member accepts. At the end date, the final standings go into the group's season history (Seasons tab, `/fm season`).
+
 ## 1.6.5
 - **Fix: the Help! button did nothing.** Reading your health could fail silently on this client, which stopped the call before it was sent. The help call now always goes out, and any error is shown in the chat.
 - **Fix: you still appeared twice** ("First" and "First Last"). The game gives only your first name for yourself, while the server uses your full name. FriendMap now learns your full name from the group channel and merges your old entries in the leaderboard and members window.

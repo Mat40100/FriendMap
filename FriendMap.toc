@@ -4,7 +4,7 @@
 ## Author: Mathieu
 ## IconTexture: Interface\AddOns\FriendMap\Media\Icon
 ## X-Curse-Project-ID: 1791378
-## Version: 1.6.5
+## Version: 1.6.6
 ## SavedVariables: FriendMapDB
 
 Libs\LibStub\LibStub.lua
@@ -18,6 +18,7 @@ Features.lua
 Hunt.lua
 MapMenu.lua
 QuickBar.lua
+Seasons.lua
 Leaderboard.lua
 Members.lua
 Version.lua

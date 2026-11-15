@@ -426,6 +426,23 @@ local engaged, credited = {}, {}
 
 local function WeekKey(t) return date("%Y-%W", t) end
 
+-- Monday 00:00 of the current week (local time)
+function FM:WeekStart()
+    local d = date("*t")
+    local back = (d.wday + 5) % 7              -- days since Monday
+    return time({ year = d.year, month = d.month, day = d.day - back, hour = 0 })
+end
+
+-- kills older than this are dropped: the week, or the oldest running season
+function FM:KeepFrom()
+    local from = self:WeekStart()
+    if self.OldestSeasonStart then
+        local s = self:OldestSeasonStart()
+        if s and s < from then from = s end
+    end
+    return from
+end
+
 local function ClassOf(name)
     if FM:IsMe(name) then return select(2, UnitClass("player")) end
     for _, list in pairs(FM.members) do
@@ -438,16 +455,18 @@ end
 -- Kills are stored as unique events (killer + time + victim), so merging the
 -- sets other players send never counts a kill twice. Everyone ends up with the
 -- same weekly leaderboard, even for kills made while they were offline.
-local MAX_EVENTS = 600
+local MAX_EVENTS = 1500
 
 local function Store()
     FriendMapDB.kills = FriendMapDB.kills or {}
     local k = FriendMapDB.kills
-    if k.week ~= WeekKey() then
-        k.week, k.events, k.classes = WeekKey(), {}, k.classes or {}
-    end
     k.events = k.events or {}
     k.classes = k.classes or {}
+    k.week = WeekKey()
+    local keep = FM:KeepFrom()
+    for id, e in pairs(k.events) do
+        if (e.at or 0) < keep then k.events[id] = nil end
+    end
     -- kills stored under a first name only (older versions): rename them "First Last"
     for id, e in pairs(k.events) do
         local full = FM:FullName(e.killer)
@@ -477,22 +496,53 @@ local function SafeField(s) return (tostring(s or "?"):gsub("[|~;]", "")) end
 
 -- add one kill; returns true if it was new
 -- kind: "K" (kill) or "A" (assist)
-local POINTS = { K = 2, A = 1 }
-FM.KILL_POINTS = POINTS
-local function AddEvent(killer, victim, zone, at, class, kind)
+-- points: assist 1; kill by the victim's colour for the killer: yellow or harder 5,
+-- green 3, grey 2 (also kills from older versions, whose colour is unknown)
+local KILL_POINTS = { Y = 5, G = 3, X = 2 }
+local function EventPoints(e)
+    if e.kind == "A" then return 1 end
+    return KILL_POINTS[e.c or "X"] or 2
+end
+FM.EventPoints = EventPoints
+
+-- colour of a victim of level vl for me: "Y" (yellow or harder), "G" (green), "X" (grey)
+local function GreyLevel(lvl)
+    if lvl <= 5 then return 0 end
+    if lvl <= 39 then return lvl - math.floor(lvl / 10) - 5 end
+    if lvl <= 59 then return lvl - math.floor(lvl / 5) - 1 end
+    return lvl - 9
+end
+local function Tier(vl)
+    local my = UnitLevel("player") or 0
+    if not vl or vl <= 0 then return "Y" end          -- "??" level: much higher than us
+    if vl >= my - 2 then return "Y" end
+    if vl > GreyLevel(my) then return "G" end
+    return "X"
+end
+
+local function AddEvent(killer, victim, zone, at, class, kind, vclass, vlevel, tier)
     kind = (kind == "A") and "A" or "K"
     at = tonumber(at)
-    if not killer or not at or WeekKey(at) ~= WeekKey() then return false end
+    if not killer or not at or at < FM:KeepFrom() or at > time() + 600 then return false end
     local k = Store()
     killer, victim, zone = SafeField(FM:FullName(killer)), SafeField(victim), SafeField(zone)
     local id = killer .. "@" .. at .. "@" .. victim
     if class and class ~= "" and class ~= "?" then k.classes[killer] = class end
+    vclass = (vclass and vclass:match("^%u+$")) or nil
+    vlevel = tonumber(vlevel); if vlevel and vlevel <= 0 then vlevel = nil end
+    tier = (tier == "Y" or tier == "G" or tier == "X") and tier or nil
     if k.events[id] then
+        -- learn the victim's class/level from a newer version
+        local e = k.events[id]
+        if vclass and not e.vc then e.vc = vclass end
+        if vlevel and not e.vl then e.vl = vlevel end
+        if tier and not e.c then e.c = tier end
         -- the same event seen as an assist and as a kill: the kill wins
         if kind == "K" and k.events[id].kind == "A" then k.events[id].kind = nil; return true end
         return false
     end
-    k.events[id] = { killer = killer, victim = victim, zone = zone, at = at, kind = kind == "A" and "A" or nil }
+    k.events[id] = { killer = killer, victim = victim, zone = zone, at = at, kind = kind == "A" and "A" or nil,
+                     vc = vclass, vl = vlevel, c = tier }
     k.classes[killer] = ClassOf(killer) or k.classes[killer]
     -- keep the store bounded (drop the oldest)
     local n, oldestId, oldestAt = 0, nil, math.huge
@@ -509,9 +559,19 @@ local function Changed()
     FM:RefreshUI()
 end
 
-function FM:KillLog()
+-- view = nil (this week) or { from = t, to = t, who = { [name] = true } }
+local function InView(e, view)
+    local from = view and view.from or FM:WeekStart()
+    if e.at < from then return false end
+    if view and view.to and e.at > view.to then return false end
+    if view and view.who and not view.who[e.killer] then return false end
+    return true
+end
+FM.InView = InView
+
+function FM:KillLog(view)
     local t = {}
-    for _, e in pairs(Store().events) do t[#t + 1] = e end
+    for _, e in pairs(Store().events) do if InView(e, view) then t[#t + 1] = e end end
     table.sort(t, function(a, b) return a.at > b.at end)
     return t
 end
@@ -525,14 +585,14 @@ function FM:WeekLabel()
 end
 
 -- ranked by points: kill = 2, assist = 1
-function FM:Leaderboard(limit)
+function FM:Leaderboard(limit, view)
     local by = {}
-    for _, e in pairs(Store().events) do
+    for _, e in pairs(Store().events) do if InView(e, view) then
         local r = by[e.killer] or { name = e.killer, n = 0, k = 0, a = 0 }
         if e.kind == "A" then r.a = r.a + 1 else r.k = r.k + 1 end
-        r.n = r.n + POINTS[e.kind or "K"]
+        r.n = r.n + EventPoints(e)
         by[e.killer] = r
-    end
+    end end
     local t = {}
     for _, r in pairs(by) do t[#t + 1] = r end
     table.sort(t, function(a, b) if a.n ~= b.n then return a.n > b.n end return a.name < b.name end)
@@ -550,7 +610,7 @@ local function Digest()
     local n, sum = 0, 0
     for _, e in pairs(Store().events) do
         n = n + 1
-        sum = (sum + e.at % 1000003 + #e.killer * 7 + #e.victim + (e.kind == "A" and 13 or 0)) % 2147483647
+        sum = (sum + e.at % 1000003 + #e.killer * 7 + #e.victim + (e.kind == "A" and 13 or 0) + (e.c and 17 or 0)) % 2147483647
     end
     return n, sum
 end
@@ -579,7 +639,8 @@ local function SendAll(g)
     local k = Store()
     local buf, len = {}, 0
     for _, e in pairs(k.events) do
-        local s = ("%s~%s~%s~%d~%s~%s"):format(e.killer, e.victim, e.zone, e.at, k.classes[e.killer] or "", e.kind or "K")
+        local s = ("%s~%s~%s~%d~%s~%s~%s~%d~%s"):format(e.killer, e.victim, e.zone, e.at, k.classes[e.killer] or "", e.kind or "K",
+            e.vc or "", e.vl or 0, e.c or "")
         if len + #s + 1 > 200 and #buf > 0 then
             Queue(g, "KS|" .. table.concat(buf, ";"))
             buf, len = {}, 0
@@ -626,8 +687,8 @@ end
 FM.Handlers.KS = function(self, p, code)
     local added = 0
     for entry in tostring(p[2] or ""):gmatch("[^;]+") do
-        local killer, victim, zone, at, class, kind = strsplit("~", entry)
-        if AddEvent(killer, victim, zone, at, class, kind) then added = added + 1 end
+        local killer, victim, zone, at, class, kind, vclass, vlevel, tier = strsplit("~", entry)
+        if AddEvent(killer, victim, zone, at, class, kind, vclass, vlevel, tier) then added = added + 1 end
     end
     if added > 0 then Changed() end
 end
@@ -667,14 +728,18 @@ local function Credit(u, guid, kind)
     local victim = Clean(UnitName(u))
     local me = FM:MyName()
     local at, zone = time(), SafeField(ZoneName())
-    AddEvent(me, victim, zone, at, select(2, UnitClass("player")), kind)
+    local vclass, vlevel = select(2, UnitClass(u)), UnitLevel(u)
+    if type(vlevel) ~= "number" or vlevel <= 0 then vlevel = 0 end
+    local tier = Tier(vlevel)
+    AddEvent(me, victim, zone, at, select(2, UnitClass("player")), kind, vclass, vlevel, tier)
+    local pts = EventPoints({ kind = kind, c = tier })
     Changed()
     if kind == "A" then
-        FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffffbb66Assist on %s|r (%s) +1"):format(victim, zone))
+        FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffffbb66Assist on %s|r (%s) +%d"):format(victim, zone, pts))
     else
-        FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s) +2"):format(victim, zone))
+        FM:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800You killed %s|r (%s) +%d"):format(victim, zone, pts))
     end
-    Broadcast(("KILL|%s|%s|%d|%s"):format(SafeField(victim), zone, at, kind))
+    Broadcast(("KILL|%s|%s|%d|%s|%s|%d|%s"):format(SafeField(victim), zone, at, kind, vclass or "", vlevel, tier))
     if FM.OnKill then FM:OnKill(me, victim) end
 end
 
@@ -723,14 +788,20 @@ FM.Handlers.KILL = function(self, p, code, sender, short)
     local kind = (p[5] == "A") and "A" or "K"
     local class
     for _, m in pairs(self.members[code] or {}) do if m.name == short then class = m.class end end
-    if not AddEvent(short, p[2], p[3], at, class, kind) then return end -- already known (e.g. via another group)
+    -- KILL|victim|zone|time|kind|vclass|vlevel  (fields 6-7 since 1.6.6)
+    local vclass = (p[6] and p[6] ~= code) and p[6] or nil
+    local vlevel = (p[7] and p[7] ~= code) and p[7] or nil
+    local tier = (p[8] and p[8] ~= code) and p[8] or nil
+    if not AddEvent(short, p[2], p[3], at, class, kind, vclass, vlevel, tier) then return end -- already known (e.g. via another group)
     Changed()
     self:Print(("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:0|t |cffff8800%s %s %s|r (%s)"):format(short,
         kind == "A" and "helped kill" or "killed", p[2] or "?", p[3] or "?"))
     if self.OnKill then self:OnKill(short, p[2]) end
 end
 
-FM.SlashExtra.top = function() FM:ToggleLeaderboard() end
+FM.SlashExtra.top = function(rest)
+    FM:ToggleLeaderboard()
+end
 
 ----------------------------------------------------------------------
 -- 7. Level-up & achievement news
