@@ -340,7 +340,7 @@ local function Build()
 
     local foot = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     foot:SetPoint("BOTTOM", 0, 18)
-    foot:SetText("Kill: |cffffd100yellow+ 5|r  |cff40ff40green 3|r  |cff9d9d9dgrey 2|r  ·  assist 1")
+    foot:SetText("Kill: |cffff2020skull 8|r  |cffffd100yellow+ 5|r  |cff40ff40green 3|r  |cff9d9d9dgrey 2|r  ·  assist 1")
 
     SelectTab("rank")
 end
@@ -694,7 +694,7 @@ local function RefreshHistory(self)
             local assist = e.kind == "A"
             r.stripe:SetColorTexture(assist and 1 or 0.9, assist and 0.6 or 0.15, assist and 0.2 or 0.1, 1)
             local pts = FM.EventPoints(e)
-            local TIERS = { Y = "|cffffd100", G = "|cff40ff40", X = "|cff9d9d9d" }
+            local TIERS = { S = "|cffff2020", Y = "|cffffd100", G = "|cff40ff40", X = "|cff9d9d9d" }
             r.badge:SetText(assist and "|cffffaa44ASSIST +1|r" or ((TIERS[e.c] or "|cffff4433") .. "KILL +" .. pts .. "|r"))
             local kr, kg, kb = ClassColor(self:KillerClass(e.killer))
             r.info:SetText(("by %s%s|r  ·  %s  ·  %s"):format(Hex(kr, kg, kb), e.killer, e.zone or "?", Ago(e.at)))

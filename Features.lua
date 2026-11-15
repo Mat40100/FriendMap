@@ -496,16 +496,16 @@ local function SafeField(s) return (tostring(s or "?"):gsub("[|~;]", "")) end
 
 -- add one kill; returns true if it was new
 -- kind: "K" (kill) or "A" (assist)
--- points: assist 1; kill by the victim's colour for the killer: yellow or harder 5,
+-- points: assist 1; kill by the victim's colour for the killer: skull (level ??) 8, yellow or harder 5,
 -- green 3, grey 2 (also kills from older versions, whose colour is unknown)
-local KILL_POINTS = { Y = 5, G = 3, X = 2 }
+local KILL_POINTS = { S = 8, Y = 5, G = 3, X = 2 }
 local function EventPoints(e)
     if e.kind == "A" then return 1 end
     return KILL_POINTS[e.c or "X"] or 2
 end
 FM.EventPoints = EventPoints
 
--- colour of a victim of level vl for me: "Y" (yellow or harder), "G" (green), "X" (grey)
+-- colour of a victim of level vl for me: "S" (skull), "Y" (yellow or harder), "G" (green), "X" (grey)
 local function GreyLevel(lvl)
     if lvl <= 5 then return 0 end
     if lvl <= 39 then return lvl - math.floor(lvl / 10) - 5 end
@@ -514,7 +514,7 @@ local function GreyLevel(lvl)
 end
 local function Tier(vl)
     local my = UnitLevel("player") or 0
-    if not vl or vl <= 0 then return "Y" end          -- "??" level: much higher than us
+    if not vl or vl <= 0 then return "S" end          -- skull ("??" level): much higher than us
     if vl >= my - 2 then return "Y" end
     if vl > GreyLevel(my) then return "G" end
     return "X"
@@ -530,7 +530,7 @@ local function AddEvent(killer, victim, zone, at, class, kind, vclass, vlevel, t
     if class and class ~= "" and class ~= "?" then k.classes[killer] = class end
     vclass = (vclass and vclass:match("^%u+$")) or nil
     vlevel = tonumber(vlevel); if vlevel and vlevel <= 0 then vlevel = nil end
-    tier = (tier == "Y" or tier == "G" or tier == "X") and tier or nil
+    tier = KILL_POINTS[tier or ""] and tier or nil
     if k.events[id] then
         -- learn the victim's class/level from a newer version
         local e = k.events[id]
