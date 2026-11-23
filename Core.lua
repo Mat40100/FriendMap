@@ -171,6 +171,9 @@ function FM:JoinGroup(code, password, name)
     table.insert(FriendMapDB.groups, g)
     self:JoinChannel(g)
     self:Print(("Joined group |cffffd100%s|r."):format(g.name))
+    if not FriendMapDB.sharing then
+        self:Print("Your position is |cffff0000not shared|r. Turn it on with |cffffd100/fm share|r or the checkbox in the FriendMap window.")
+    end
     self:RefreshUI()
     return g
 end
@@ -205,19 +208,33 @@ local function HideChannelFromChat(ch)
     end
 end
 
--- Don't grab /1 or /2 before General/Trade got joined on login.
+-- Don't grab /1 before General got joined on login (Trade alone in /2 is not enough).
 local function DefaultChannelsReady()
-    return GetChannelName(1) > 0 or GetChannelName(2) > 0 or (GetTime() - (FM.worldTime or 0)) > 20
+    return GetChannelName(1) > 0 or (GetTime() - (FM.worldTime or 0)) > 20
 end
+
+-- Our hidden channel must never sit in /1-/4 (General, Trade, LocalDefense, LFG...):
+-- move it to the first free slot from /5 on.
+local function MoveOutOfDefaultSlots(ch)
+    local id = GetChannelName(ch)
+    if not id or id == 0 or id > 4 then return end
+    local swap = (C_ChatInfo and C_ChatInfo.SwapChatChannelsByChannelIndex) or SwapChatChannelByLocalID
+    if not swap then return end
+    for slot = 5, 10 do
+        if GetChannelName(slot) == 0 then pcall(swap, id, slot) return end
+    end
+end
+FM.MoveOutOfDefaultSlots = MoveOutOfDefaultSlots
 
 function FM:JoinChannel(g)
     local ch = self:ChannelName(g.code)
-    if GetChannelName(ch) > 0 then return true end
+    if GetChannelName(ch) > 0 then MoveOutOfDefaultSlots(ch) return true end
     if not self.worldReady or not DefaultChannelsReady() then return false end
     FM.lastStep = "JoinTemporaryChannel"
     if not pcall(JoinTemporaryChannel, ch, g.password) then return false end
     FM.lastStep = "HideChannelFromChat"
     HideChannelFromChat(ch)
+    MoveOutOfDefaultSlots(ch)
     FM.lastStep = "after join"
     return GetChannelName(ch) > 0
 end
@@ -441,7 +458,7 @@ function FM:Invite(target, g)
 end
 
 StaticPopupDialogs["FRIENDMAP_INVITE"] = {
-    text = "%s invites you to the FriendMap group |cffffd100%s|r.\nJoin and share your position?",
+    text = "%s invites you to the FriendMap group |cffffd100%s|r.\nJoin it? (Your position stays hidden until you turn sharing on.)",
     button1 = ACCEPT, button2 = DECLINE,
     OnAccept = function(_, data) FM:WithHardware(function() FM:JoinGroup(data.code, data.password, data.name) end) end,
     timeout = 60, whileDead = true, hideOnEscape = true, preferredIndex = 3,
@@ -488,7 +505,7 @@ ev:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" and ... == ADDON then
         FriendMapDB = FriendMapDB or {}
         FriendMapDB.groups = FriendMapDB.groups or {}
-        if FriendMapDB.sharing == nil then FriendMapDB.sharing = true end
+        if FriendMapDB.sharing == nil then FriendMapDB.sharing = false end
         if FriendMapDB.minimap == nil then FriendMapDB.minimap = true end
         if FriendMapDB.pvpAnnounce == nil then FriendMapDB.pvpAnnounce = true end  -- tell my groups when I fight
         if FriendMapDB.pvpAlert == nil then FriendMapDB.pvpAlert = true end        -- big on-screen warning for others' fights

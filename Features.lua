@@ -422,7 +422,8 @@ FM.SlashExtra.status = function(rest) FM:SetStatus(rest) end
 ----------------------------------------------------------------------
 -- 6. PvP kill feed + weekly leaderboard
 ----------------------------------------------------------------------
-local engaged, credited = {}, {}
+local credited = {}
+local hitByMe = {}   -- [guid] = GetTime() I last damaged / debuffed / attacked this unit
 
 local function WeekKey(t) return date("%Y-%W", t) end
 
@@ -708,19 +709,6 @@ local function ScanUnits(fn)
     for i = 1, 40 do fn("nameplate" .. i) end
 end
 
--- Is this enemy fighting one of us (me or a group member)?
-local function FightingFriend(u)
-    local t = u .. "target"
-    if not UnitExists(t) then return false end
-    if UnitIsUnit(t, "player") then return true end
-    local name = UnitName(t)
-    if not name then return false end
-    for _, list in pairs(FM.members) do
-        for _, m in pairs(list) do if m.name == name then return true end end
-    end
-    return false
-end
-
 local lastTarget = {}   -- [guid] = GetTime() we last had it as our target
 
 local function Credit(u, guid, kind)
@@ -743,32 +731,51 @@ local function Credit(u, guid, kind)
     if FM.OnKill then FM:OnKill(me, victim) end
 end
 
+-- Track what I actually hit: being near a friend who fights someone is not enough.
+local CLEU_HIT = { SWING_DAMAGE = true, RANGE_DAMAGE = true, SPELL_DAMAGE = true, SPELL_PERIODIC_DAMAGE = true,
+    SPELL_AURA_APPLIED = true, SPELL_MISSED = true, SWING_MISSED = true, RANGE_MISSED = true }
+local hitEv = CreateFrame("Frame")
+if CombatLogGetCurrentEventInfo then
+    hitEv:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    hitEv:SetScript("OnEvent", function()
+        local _, sub, _, src, _, _, _, dst, _, dstFlags = CombatLogGetCurrentEventInfo()
+        if not CLEU_HIT[sub] or not dst or src ~= UnitGUID("player") then return end
+        if sub == "SPELL_AURA_APPLIED" and bit.band(dstFlags or 0, COMBATLOG_OBJECT_REACTION_HOSTILE or 0x40) == 0 then return end
+        hitByMe[dst] = GetTime()
+    end)
+end
+
+local function IHit(guid, now)
+    return hitByMe[guid] and now - hitByMe[guid] < 30
+end
+
 -- Look at one unit: note who we fight, credit the ones that died.
+-- Nothing is credited unless I hit it myself in the last 30 s.
 --   Kill:   it was our target (now or in the last 5 s) when it died
---   Assist: we fought it, or it was fighting one of us, in the last 30 s
+--   Assist: otherwise
 local function CheckUnit(u)
     if not UnitExists(u) or not UnitIsPlayer(u) or not UnitCanAttack("player", u) then return end
     local guid = UnitGUID(u)
     if not guid then return end
     local now = GetTime()
     if UnitIsDeadOrGhost(u) then
-        if credited[guid] or not engaged[guid] or now - engaged[guid] > 30 then return end
+        if credited[guid] or not IHit(guid, now) then return end
         local mine = UnitIsUnit(u, "target") or (lastTarget[guid] and now - lastTarget[guid] < 5)
         Credit(u, guid, mine and "K" or "A")
         return
     end
     if UnitIsUnit(u, "target") then lastTarget[guid] = now end
-    if UnitAffectingCombat(u) and (FM.IsHostilePlayerFightingMe(u) or FightingFriend(u)) then
-        engaged[guid] = now
-    end
+    -- no combat log on this client: attacking my target while in combat counts as a hit
+    if not CombatLogGetCurrentEventInfo and UnitIsUnit(u, "target") and UnitAffectingCombat("player")
+        and UnitAffectingCombat(u) then hitByMe[guid] = now end
 end
 
 local function CheckKills()
     if not FM.IsWorldPvPArea() then return end
     ScanUnits(CheckUnit)
     local now = GetTime()
-    for guid, t in pairs(engaged) do if now - t > 60 then engaged[guid] = nil end end
     for guid, t in pairs(lastTarget) do if now - t > 60 then lastTarget[guid] = nil end end
+    for guid, t in pairs(hitByMe) do if now - t > 60 then hitByMe[guid] = nil end end
     for guid, t in pairs(credited) do if now - t > 300 then credited[guid] = nil end end
 end
 

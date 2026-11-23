@@ -1,5 +1,10 @@
 # FriendMap changelog
 
+## 1.6.7
+- **Position sharing is now off by default.** New players share nothing until they turn it on (`/fm share` or the checkbox in the FriendMap window). Joining a group reminds you how to turn it on. Players who already had it on keep their setting.
+- **Fix: points for kills you didn't take part in.** Being near a friend who killed someone no longer gives you an assist. A kill or an assist now only counts if you hit the enemy yourself (damage, spell or debuff) in the last 30 s.
+- **Fix: the hidden group channel took /1 for some players.** It now waits for General before joining, and if it still ends up in /1–/4 it moves itself to the first free slot from /5 on.
+
 ## 1.6.6
 - **New leaderboard look**: wider window, bigger podium, tabs, and a view switch between this week and running seasons.
 - **Kill history**: every kill with the victim's class and level, who made it, where and when. Click a player to see only their kills (`/fm kills [name]`).
